@@ -11,6 +11,16 @@ export default function AdminPanel({ user }) {
   const [customers, setCustomers] = useState([]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [editingProductId, setEditingProductId] = useState(null);
+
+  // Order filters & pagination
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderPayment, setOrderPayment] = useState('');
+  const [orderStatus, setOrderStatus] = useState('');
+  const [orderDateFrom, setOrderDateFrom] = useState('');
+  const [orderDateTo, setOrderDateTo] = useState('');
+  const [orderPage, setOrderPage] = useState(1);
+  const ORDERS_PER_PAGE = 5;
   
   const [form, setForm] = useState({ name: '', category: 'Engine Oil', price: '', stock: '', description: '', vehicle_ids: [], image: null });
   const [vForm, setVForm] = useState({ make: '', model: '', year_start: '', year_end: '' });
@@ -54,19 +64,37 @@ export default function AdminPanel({ user }) {
         formData.append('image', form.image);
       }
 
-      const res = await fetch(`/api/products`, {
-        method: 'POST',
+      const method = editingProductId ? 'PUT' : 'POST';
+      const url = editingProductId ? `/api/products/${editingProductId}` : `/api/products`;
+
+      const res = await fetch(url, {
+        method,
         headers: { 'x-auth-token': token },
         body: formData
       });
       if (res.ok) {
-        alert('Product added!');
+        alert(editingProductId ? 'Product updated!' : 'Product added!');
         setForm({ name: '', category: 'Engine Oil', price: '', stock: '', description: '', vehicle_ids: [], image: null });
+        setEditingProductId(null);
         const fileInput = document.getElementById('product-image-upload');
         if (fileInput) fileInput.value = '';
         fetchProducts();
-      } else alert('Error adding product');
+      } else alert('Error saving product');
     } catch (err) { alert('Network error'); }
+  };
+
+  const handleEditProduct = (p) => {
+    setEditingProductId(p.id);
+    setForm({
+      name: p.name,
+      category: p.category || 'Engine Oil',
+      price: p.price,
+      stock: p.stock,
+      description: p.description || '',
+      vehicle_ids: p.vehicle_ids || [],
+      image: null
+    });
+    setTab('add_product');
   };
 
   const handleDeleteProduct = async (id) => {
@@ -140,7 +168,7 @@ export default function AdminPanel({ user }) {
         <button onClick={() => setTab('dashboard')} className={tab === 'dashboard' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Activity size={18} /> Dashboard</button>
         <button onClick={() => setTab('orders')} className={tab === 'orders' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Server size={18} /> View Orders</button>
         <button onClick={() => setTab('products')} className={tab === 'products' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Package size={18} /> Manage Products</button>
-        <button onClick={() => setTab('add_product')} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Plus size={18} /> Add Product</button>
+        <button onClick={() => { setTab('add_product'); setEditingProductId(null); setForm({ name: '', category: 'Engine Oil', price: '', stock: '', description: '', vehicle_ids: [], image: null }); }} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Plus size={18} /> Add Product</button>
         <button onClick={() => setTab('vehicles')} className={tab === 'vehicles' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Car size={18} /> Vehicles</button>
         <button onClick={() => setTab('customers')} className={tab === 'customers' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Users size={18} /> Customers</button>
       </div>
@@ -247,7 +275,7 @@ export default function AdminPanel({ user }) {
         {/* ADD PRODUCT TAB */}
         {tab === 'add_product' && (
           <div>
-            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Add New Product</h2>
+            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>{editingProductId ? 'Edit Product' : 'Add New Product'}</h2>
             <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div style={{ display: 'flex', gap: 20 }}>
                 <div className="form-group" style={{ flex: 2 }}>
@@ -291,7 +319,7 @@ export default function AdminPanel({ user }) {
                   ))}
                 </div>
               </div>
-              <button type="submit" className="btn-primary" style={{ alignSelf: 'flex-start', marginTop: 16 }}>Create Product</button>
+              <button type="submit" className="btn-primary" style={{ alignSelf: 'flex-start', marginTop: 16 }}>{editingProductId ? 'Update Product' : 'Create Product'}</button>
             </form>
           </div>
         )}
@@ -309,6 +337,7 @@ export default function AdminPanel({ user }) {
                       <td style={{ padding: 12 }}>#{p.id}</td><td style={{ padding: 12 }}>{p.name}</td><td style={{ padding: 12 }}>Rs. {p.price}</td>
                       <td style={{ padding: 12 }}><span style={{ color: p.stock === 0 ? 'var(--red)' : 'inherit' }}>{p.stock === 0 ? 'Out of Stock' : p.stock}</span></td>
                       <td style={{ padding: 12, display: 'flex', gap: 8 }}>
+                        <button onClick={() => handleEditProduct(p)} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer' }}><Edit size={18} /></button>
                         <button onClick={() => handleDeleteProduct(p.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button>
                       </td>
                     </tr>
@@ -323,46 +352,129 @@ export default function AdminPanel({ user }) {
         {tab === 'orders' && (
           <div>
             <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Order Management</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {orders.map(o => (
-                <div key={o.id} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: 8, padding: 20 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                    <div>
-                      <h3 style={{ color: 'var(--white)', margin: 0 }}>Order #{o.id} <span style={{ fontSize: '0.8rem', padding: '4px 8px', borderRadius: 12, background: o.status === 'Pending' ? 'var(--red)' : 'var(--red)', color: 'white' }}>{o.status}</span></h3>
-                      <p style={{ color: 'var(--muted)', margin: '4px 0 0 0', fontSize: '0.9rem' }}>{new Date(o.created_at).toLocaleString()}</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ color: 'var(--white)', fontWeight: 'bold', margin: 0, fontSize: '1.2rem' }}>Rs. {o.total_amount}</p>
-                      <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}>{o.payment_method}</p>
-                    </div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 16 }}>
-                    <div style={{ flex: 1, minWidth: '200px' }}>
-                      <h4 style={{ color: 'var(--white)', marginBottom: 8, fontSize: '0.9rem', textTransform: 'uppercase' }}>Customer & Shipping</h4>
-                      <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}><strong>{o.customer_name}</strong> ({o.customer_email})</p>
-                      <p style={{ color: 'var(--muted)', margin: '4px 0', fontSize: '0.9rem' }}>{o.shipping_address || 'No address'}, {o.shipping_city}</p>
-                      <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}>📞 {o.shipping_phone}</p>
-                    </div>
-                    <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      <div>
-                        <label style={{ display: 'block', color: 'var(--muted)', fontSize: '0.8rem', marginBottom: 4 }}>Update Status</label>
-                        <select className="form-input" value={o.status} onChange={(e) => handleUpdateOrder(o.id, e.target.value, o.tracking_number)}>
-                          <option value="Pending">Pending</option><option value="Processing">Processing</option><option value="Shipped">Shipped</option><option value="Delivered">Delivered</option><option value="Cancelled">Cancelled</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', color: 'var(--muted)', fontSize: '0.8rem', marginBottom: 4 }}>Tracking Number</label>
-                        <input type="text" className="form-input" placeholder="e.g. TRK123456789" value={o.tracking_number || ''} onChange={(e) => {
-                          const val = e.target.value;
-                          setOrders(orders.map(order => order.id === o.id ? { ...order, tracking_number: val } : order));
-                        }} onBlur={(e) => handleUpdateOrder(o.id, o.status, e.target.value)} />
-                      </div>
-                    </div>
-                  </div>
+
+            {/* Filter Bar */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 24, padding: 20, background: 'rgba(0,0,0,0.2)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <div style={{ flex: '1 1 200px' }}>
+                <label style={{ fontSize: '0.75rem', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Customer Name</label>
+                <input type="text" className="form-input" placeholder="Search customer..." value={orderSearch} onChange={e => { setOrderSearch(e.target.value); setOrderPage(1); }} style={{ padding: '8px 12px' }} />
+              </div>
+              <div style={{ flex: '1 1 160px' }}>
+                <label style={{ fontSize: '0.75rem', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Payment Type</label>
+                <select className="form-input" value={orderPayment} onChange={e => { setOrderPayment(e.target.value); setOrderPage(1); }} style={{ padding: '8px 12px' }}>
+                  <option value="">All</option>
+                  <option value="cod">Cash on Delivery</option>
+                  <option value="card">Card</option>
+                  <option value="bank">Bank Transfer</option>
+                </select>
+              </div>
+              <div style={{ flex: '1 1 160px' }}>
+                <label style={{ fontSize: '0.75rem', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Status</label>
+                <select className="form-input" value={orderStatus} onChange={e => { setOrderStatus(e.target.value); setOrderPage(1); }} style={{ padding: '8px 12px' }}>
+                  <option value="">All</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div style={{ flex: '1 1 160px' }}>
+                <label style={{ fontSize: '0.75rem', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>From Date</label>
+                <input type="date" className="form-input" value={orderDateFrom} onChange={e => { setOrderDateFrom(e.target.value); setOrderPage(1); }} style={{ padding: '8px 12px' }} />
+              </div>
+              <div style={{ flex: '1 1 160px' }}>
+                <label style={{ fontSize: '0.75rem', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>To Date</label>
+                <input type="date" className="form-input" value={orderDateTo} onChange={e => { setOrderDateTo(e.target.value); setOrderPage(1); }} style={{ padding: '8px 12px' }} />
+              </div>
+              {(orderSearch || orderPayment || orderStatus || orderDateFrom || orderDateTo) && (
+                <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-end' }}>
+                  <button onClick={() => { setOrderSearch(''); setOrderPayment(''); setOrderStatus(''); setOrderDateFrom(''); setOrderDateTo(''); setOrderPage(1); }} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--white)', borderRadius: 4, cursor: 'pointer' }}>Clear</button>
                 </div>
-              ))}
+              )}
             </div>
+
+            {/* Orders List */}
+            {(() => {
+              const filtered = orders.filter(o => {
+                if (orderSearch && !o.customer_name?.toLowerCase().includes(orderSearch.toLowerCase()) && !o.customer_email?.toLowerCase().includes(orderSearch.toLowerCase())) return false;
+                if (orderPayment && o.payment_method !== orderPayment) return false;
+                if (orderStatus && o.status !== orderStatus) return false;
+                if (orderDateFrom && new Date(o.created_at) < new Date(orderDateFrom)) return false;
+                if (orderDateTo) {
+                  const end = new Date(orderDateTo); end.setHours(23,59,59,999);
+                  if (new Date(o.created_at) > end) return false;
+                }
+                return true;
+              });
+              const totalPages = Math.ceil(filtered.length / ORDERS_PER_PAGE);
+              const paginated = filtered.slice((orderPage - 1) * ORDERS_PER_PAGE, orderPage * ORDERS_PER_PAGE);
+
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, background: 'rgba(255,255,255,0.05)', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border)' }}>
+                    <div style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+                      Showing <strong>{filtered.length}</strong> {filtered.length === 1 ? 'order' : 'orders'}
+                    </div>
+                    <div style={{ color: 'var(--white)', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                      Total Value: Rs. {filtered.reduce((sum, o) => sum + Number(o.total_amount), 0).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {paginated.length === 0 && (
+                      <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>No orders match your filters.</div>
+                    )}
+                    {paginated.map(o => (
+                      <div key={o.id} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: 8, padding: 20 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+                          <div>
+                            <h3 style={{ color: 'var(--white)', margin: 0 }}>Order #{o.id} <span style={{ fontSize: '0.8rem', padding: '4px 8px', borderRadius: 12, background: o.status === 'Delivered' ? '#166534' : o.status === 'Cancelled' ? '#4B1113' : '#7C2D12', color: 'white' }}>{o.status}</span></h3>
+                            <p style={{ color: 'var(--muted)', margin: '4px 0 0 0', fontSize: '0.9rem' }}>{new Date(o.created_at).toLocaleString()}</p>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <p style={{ color: 'var(--white)', fontWeight: 'bold', margin: 0, fontSize: '1.2rem' }}>Rs. {Number(o.total_amount).toLocaleString()}</p>
+                            <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem', textTransform: 'uppercase' }}>{o.payment_method === 'cod' ? 'Cash on Delivery' : o.payment_method === 'bank' ? 'Bank Transfer' : 'Card'}</p>
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+                          <div style={{ flex: 1, minWidth: '200px' }}>
+                            <h4 style={{ color: 'var(--white)', marginBottom: 8, fontSize: '0.9rem', textTransform: 'uppercase' }}>Customer & Shipping</h4>
+                            <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}><strong>{o.customer_name}</strong> ({o.customer_email})</p>
+                            <p style={{ color: 'var(--muted)', margin: '4px 0', fontSize: '0.9rem' }}>{o.shipping_address || 'No address'}, {o.shipping_city}</p>
+                            <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}>📞 {o.shipping_phone}</p>
+                          </div>
+                          <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <div>
+                              <label style={{ display: 'block', color: 'var(--muted)', fontSize: '0.8rem', marginBottom: 4 }}>Update Status</label>
+                              <select className="form-input" value={o.status} onChange={(e) => handleUpdateOrder(o.id, e.target.value, o.tracking_number)}>
+                                <option value="Pending">Pending</option><option value="Processing">Processing</option><option value="Shipped">Shipped</option><option value="Delivered">Delivered</option><option value="Cancelled">Cancelled</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', color: 'var(--muted)', fontSize: '0.8rem', marginBottom: 4 }}>Tracking Number</label>
+                              <input type="text" className="form-input" placeholder="e.g. TRK123456789" value={o.tracking_number || ''} onChange={(e) => { const val = e.target.value; setOrders(orders.map(order => order.id === o.id ? { ...order, tracking_number: val } : order)); }} onBlur={(e) => handleUpdateOrder(o.id, o.status, e.target.value)} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 24 }}>
+                      <button onClick={() => setOrderPage(p => Math.max(1, p - 1))} disabled={orderPage === 1} style={{ padding: '8px 16px', background: orderPage === 1 ? 'rgba(255,255,255,0.05)' : 'var(--red)', border: 'none', color: 'white', borderRadius: 4, cursor: orderPage === 1 ? 'default' : 'pointer' }}>← Prev</button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                        <button key={p} onClick={() => setOrderPage(p)} style={{ padding: '8px 14px', background: p === orderPage ? 'var(--red)' : 'rgba(255,255,255,0.05)', border: 'none', color: 'white', borderRadius: 4, cursor: 'pointer', fontWeight: p === orderPage ? 'bold' : 'normal' }}>{p}</button>
+                      ))}
+                      <button onClick={() => setOrderPage(p => Math.min(totalPages, p + 1))} disabled={orderPage === totalPages} style={{ padding: '8px 16px', background: orderPage === totalPages ? 'rgba(255,255,255,0.05)' : 'var(--red)', border: 'none', color: 'white', borderRadius: 4, cursor: orderPage === totalPages ? 'default' : 'pointer' }}>Next →</button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
 

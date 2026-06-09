@@ -100,7 +100,7 @@ export default function App() {
       metaThemeColor.content = color;
       document.head.appendChild(metaThemeColor);
     }
-  }, [user]);
+  }, [theme]);
 
   // Sync cart to localStorage
   useEffect(() => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, CreditCard, Truck, CheckCircle } from 'lucide-react';
+import { ArrowRight, CreditCard, Truck, CheckCircle, Building2 } from 'lucide-react';
 
 export default function Checkout({ cartItems, onOrderSuccess, user }) {
   const navigate = useNavigate();
@@ -190,6 +190,31 @@ export default function Checkout({ cartItems, onOrderSuccess, user }) {
                         <input className="form-input" placeholder="123" maxLength={3} />
                       </div>
                     </div>
+                  </div>
+                )}
+
+                <label
+                  className={`payment-option${form.payment === 'bank' ? ' selected' : ''}`}
+                  onClick={() => update('payment', 'bank')}
+                >
+                  <input type="radio" className="payment-radio" name="payment" checked={form.payment === 'bank'} readOnly />
+                  <div>
+                    <Building2 size={20} style={{ color:'var(--red)', marginBottom:6 }}/>
+                    <div className="payment-option-title">Bank Transfer</div>
+                    <div className="payment-option-desc">Transfer directly to our bank account. Order ships after payment is confirmed.</div>
+                  </div>
+                </label>
+
+                {form.payment === 'bank' && (
+                  <div style={{ marginTop: 16, padding: 20, background: 'rgba(0,0,0,0.2)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                    <div style={{ fontFamily: 'var(--font-hero)', fontSize: '1rem', color: 'var(--white)', textTransform: 'uppercase', marginBottom: 12 }}>Bank Details</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.9rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--muted)' }}>Bank</span><strong style={{ color: 'var(--white)' }}>Sampath Bank</strong></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--muted)' }}>Account Name</span><strong style={{ color: 'var(--white)' }}>KHK Auto Parts (Pvt) Ltd</strong></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--muted)' }}>Account No.</span><strong style={{ color: 'var(--white)' }}>1234 5678 9012</strong></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--muted)' }}>Branch</span><strong style={{ color: 'var(--white)' }}>Nugegoda</strong></div>
+                    </div>
+                    <p style={{ color: '#F59E0B', fontSize: '0.8rem', margin: '12px 0 0 0' }}>⚠️ Please use your Order ID as the payment reference and send the receipt to our WhatsApp.</p>
                   </div>
                 )}
 

@@ -31,6 +31,15 @@ router.get('/', async (req, res) => {
     }
 
     const [products] = await db.query(query, params);
+    
+    // Fetch all product_vehicles mappings
+    const [mappings] = await db.query('SELECT product_id, vehicle_id FROM product_vehicles');
+    
+    // Attach vehicle_ids to each product
+    products.forEach(p => {
+      p.vehicle_ids = mappings.filter(m => m.product_id === p.id).map(m => m.vehicle_id);
+    });
+
     res.json(products);
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -107,17 +116,35 @@ router.post('/', adminAuth, upload.single('image'), async (req, res) => {
 // @route   PUT /api/products/:id
 // @desc    Update a product (Admin only)
 // @access  Private Admin
-router.put('/:id', adminAuth, async (req, res) => {
+router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
     const { id } = req.params;
-    const { name, category, price, discount_percent, stock, vehicle_ids, description } = req.body;
+    const { name, category, price, discount_percent, stock, description } = req.body;
+    let { vehicle_ids } = req.body;
+    const imageUrl = req.file ? req.file.filename : null;
 
-    await conn.query(
-      'UPDATE products SET name=?, category=?, price=?, discount_percent=?, stock=?, description=? WHERE id=?',
-      [name, category || null, price, discount_percent || 0, stock || 0, description || null, id]
-    );
+    if (vehicle_ids && typeof vehicle_ids === 'string') {
+      try {
+        vehicle_ids = JSON.parse(vehicle_ids);
+      } catch (e) {
+        vehicle_ids = [];
+      }
+    }
+
+    let query = 'UPDATE products SET name=?, category=?, price=?, discount_percent=?, stock=?, description=?';
+    let params = [name, category || null, price, discount_percent || 0, stock || 0, description || null];
+
+    if (imageUrl) {
+      query += ', image_url=?';
+      params.push(imageUrl);
+    }
+    
+    query += ' WHERE id=?';
+    params.push(id);
+
+    await conn.query(query, params);
 
     if (vehicle_ids && Array.isArray(vehicle_ids)) {
       await conn.query('DELETE FROM product_vehicles WHERE product_id = ?', [id]);
