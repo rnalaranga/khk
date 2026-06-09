@@ -14,21 +14,24 @@ export default function AdminPanel({ user }) {
   const token = localStorage.getItem('token');
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!user && token) return; // Still loading user
+    
     if (!user || user.role !== 'admin') { navigate('/'); return; }
     
     // Fetch base data
-    fetch(`/api/vehicles`).then(res => res.json()).then(data => setVehicles(data));
+    fetch(`/api/vehicles`).then(res => res.json()).then(data => setVehicles(data)).catch(err => console.error('Vehicles err:', err));
     fetchProducts();
     fetchOrders();
   }, [user, navigate]);
 
   const fetchProducts = () => {
-    fetch(`/api/products`).then(res => res.json()).then(data => setProducts(data));
+    fetch(`/api/products`).then(res => res.json()).then(data => setProducts(data)).catch(err => console.error('Products err:', err));
   };
 
   const fetchOrders = () => {
     fetch(`/api/orders/all`, { headers: { 'x-auth-token': token } })
-      .then(res => res.json()).then(data => setOrders(data));
+      .then(res => res.json()).then(data => setOrders(data)).catch(err => console.error('Orders err:', err));
   };
 
   const updateForm = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -80,6 +83,8 @@ export default function AdminPanel({ user }) {
     fetchOrders();
   };
 
+  const tokenLocal = localStorage.getItem('token');
+  if (!user && tokenLocal) return <div style={{ color: 'white', padding: 50, textAlign: 'center' }}>Loading Admin Panel...</div>;
   if (!user || user.role !== 'admin') return null;
 
   return (
