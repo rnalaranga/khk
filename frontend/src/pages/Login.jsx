@@ -14,7 +14,7 @@ export default function Login({ onLogin, addToast }) {
     e.preventDefault();
     try {
       if (verifyMode) {
-        const res = await fetch(`http://${window.location.hostname}:5000/api/auth/verify-code`, {
+        const res = await fetch(`/api/auth/verify-code`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: form.email, code: form.code })
@@ -35,7 +35,7 @@ export default function Login({ onLogin, addToast }) {
         return;
       }
 
-      const url = isLogin ? `http://${window.location.hostname}:5000/api/auth/login` : `http://${window.location.hostname}:5000/api/auth/register`;
+      const url = isLogin ? `/api/auth/login` : `/api/auth/register`;
       const body = isLogin 
         ? { email: form.email, password: form.password }
         : { name: form.name, email: form.email, password: form.password };

@@ -18,7 +18,7 @@ export default function Account({ user, setUser }) {
     const fetchOrders = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://${window.location.hostname}:5000/api/orders/my-orders`, {
+        const res = await fetch(`/api/orders/my-orders`, {
           headers: { 'x-auth-token': token }
         });
         if (res.ok) {
@@ -48,7 +48,7 @@ export default function Account({ user, setUser }) {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://${window.location.hostname}:5000/api/auth/profile`, {
+      const res = await fetch(`/api/auth/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
         body: JSON.stringify(form)

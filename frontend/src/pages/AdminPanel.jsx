@@ -17,17 +17,17 @@ export default function AdminPanel({ user }) {
     if (!user || user.role !== 'admin') { navigate('/'); return; }
     
     // Fetch base data
-    fetch(`http://${window.location.hostname}:5000/api/vehicles`).then(res => res.json()).then(data => setVehicles(data));
+    fetch(`/api/vehicles`).then(res => res.json()).then(data => setVehicles(data));
     fetchProducts();
     fetchOrders();
   }, [user, navigate]);
 
   const fetchProducts = () => {
-    fetch(`http://${window.location.hostname}:5000/api/products`).then(res => res.json()).then(data => setProducts(data));
+    fetch(`/api/products`).then(res => res.json()).then(data => setProducts(data));
   };
 
   const fetchOrders = () => {
-    fetch(`http://${window.location.hostname}:5000/api/orders/all`, { headers: { 'x-auth-token': token } })
+    fetch(`/api/orders/all`, { headers: { 'x-auth-token': token } })
       .then(res => res.json()).then(data => setOrders(data));
   };
 
@@ -49,7 +49,7 @@ export default function AdminPanel({ user }) {
         formData.append('image', form.image);
       }
 
-      const res = await fetch(`http://${window.location.hostname}:5000/api/products`, {
+      const res = await fetch(`/api/products`, {
         method: 'POST',
         headers: { 'x-auth-token': token },
         body: formData
@@ -67,12 +67,12 @@ export default function AdminPanel({ user }) {
 
   const handleDeleteProduct = async (id) => {
     if (!window.confirm("Delete this product?")) return;
-    await fetch(`http://${window.location.hostname}:5000/api/products/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
+    await fetch(`/api/products/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
     fetchProducts();
   };
 
   const handleUpdateOrder = async (orderId, newStatus, newTracking) => {
-    await fetch(`http://${window.location.hostname}:5000/api/orders/${orderId}`, {
+    await fetch(`/api/orders/${orderId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
       body: JSON.stringify({ status: newStatus, tracking_number: newTracking })

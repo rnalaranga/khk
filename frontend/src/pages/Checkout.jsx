@@ -45,7 +45,7 @@ export default function Checkout({ cartItems, onOrderSuccess, user }) {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['x-auth-token'] = token;
 
-      const response = await fetch(`http://${window.location.hostname}:5000/api/orders`, {
+      const response = await fetch(`/api/orders`, {
         method: 'POST',
         headers,
         body: JSON.stringify({

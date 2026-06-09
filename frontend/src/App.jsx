@@ -37,7 +37,7 @@ export default function App() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetch(`http://${window.location.hostname}:5000/api/auth/me`, {
+      fetch(`/api/auth/me`, {
         headers: { 'x-auth-token': token }
       })
       .then(res => {
@@ -62,7 +62,7 @@ export default function App() {
 
   // Fetch Products
   useEffect(() => {
-    fetch(`http://${window.location.hostname}:5000/api/products`)
+    fetch(`/api/products`)
       .then(res => res.json())
       .then(data => setProducts(data))
       .catch(err => console.error('Failed to load products:', err));
