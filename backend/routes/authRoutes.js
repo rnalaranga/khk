@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const db = require('../config/db');
 const auth = require('../middleware/auth');
+const adminAuth = require('../middleware/adminAuth');
 
 // @route   POST /api/auth/register
 // @desc    Register a user
@@ -95,6 +96,9 @@ router.post('/login', async (req, res) => {
     if (!user.is_verified) {
       return res.status(403).json({ message: 'Please verify your email before logging in.' });
     }
+    if (user.is_blocked) {
+      return res.status(403).json({ message: 'Your account has been suspended. Please contact support.' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
@@ -178,6 +182,48 @@ router.post('/verify-code', async (req, res) => {
     });
   } catch (error) {
     console.error('Error verifying code:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/auth/users
+// @desc    Get all customers
+// @access  Private Admin
+router.get('/users', adminAuth, async (req, res) => {
+  try {
+    const [users] = await db.query(
+      'SELECT id, name, email, phone, address, city, created_at, is_verified, is_blocked FROM users WHERE role = "customer" ORDER BY created_at DESC'
+    );
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/auth/users/:id/block
+// @desc    Toggle block status
+// @access  Private Admin
+router.put('/users/:id/block', adminAuth, async (req, res) => {
+  try {
+    const { is_blocked } = req.body;
+    await db.query('UPDATE users SET is_blocked = ? WHERE id = ?', [is_blocked ? 1 : 0, req.params.id]);
+    res.json({ message: 'User block status updated' });
+  } catch (error) {
+    console.error('Error blocking user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/auth/users/:id
+// @desc    Delete a user
+// @access  Private Admin
+router.delete('/users/:id', adminAuth, async (req, res) => {
+  try {
+    await db.query('DELETE FROM users WHERE id = ?', [req.params.id]);
+    res.json({ message: 'User deleted' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

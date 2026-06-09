@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, Droplets, Disc, SlidersHorizontal, FlaskConical, PackageOpen, Snowflake, ChevronDown } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Droplets, Disc, SlidersHorizontal, FlaskConical, PackageOpen, Snowflake, ChevronDown, Truck, ShieldCheck, Lock } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 
 const MAKES = ['Toyota', 'Honda', 'Nissan', 'Mitsubishi', 'Suzuki'];
@@ -122,6 +122,35 @@ export default function Home({ products, onAddToCart }) {
           <button onClick={() => setSlide(s => (s + 1) % SLIDES.length)} style={{ background:'rgba(255,255,255,0.1)', border:'none', color:'white', width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
             <ChevronRight size={18}/>
           </button>
+        </div>
+      </div>
+
+      {/* ── Trust Strip ── */}
+      <div className="trust-strip">
+        <div className="container">
+          <div className="trust-grid">
+            <div className="trust-item">
+              <div className="trust-icon"><Truck size={24} /></div>
+              <div className="trust-text">
+                <h4>Islandwide Delivery</h4>
+                <p>Free on orders over Rs. 5,000</p>
+              </div>
+            </div>
+            <div className="trust-item">
+              <div className="trust-icon"><ShieldCheck size={24} /></div>
+              <div className="trust-text">
+                <h4>100% Genuine</h4>
+                <p>Authentic auto parts guaranteed</p>
+              </div>
+            </div>
+            <div className="trust-item">
+              <div className="trust-icon"><Lock size={24} /></div>
+              <div className="trust-text">
+                <h4>Secure Payments</h4>
+                <p>Safe & secure checkout process</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

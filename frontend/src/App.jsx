@@ -10,6 +10,7 @@ import Checkout from './pages/Checkout';
 import Login from './pages/Login';
 import Account from './pages/Account';
 import AdminPanel from './pages/AdminPanel';
+import { MessageCircle } from 'lucide-react';
 
 // Products are now fetched from backend
 
@@ -27,10 +28,25 @@ function ToastStack({ toasts }) {
 
 export default function App() {
   const [products, setProducts]   = useState([]);
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('khk_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [toasts, setToasts]       = useState([]);
-  const [theme, setTheme]         = useState(() => localStorage.getItem('khk_theme') || 'dark');
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('khk_theme');
+    if (saved) return saved;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      return 'light';
+    }
+    return 'dark';
+  });
   const [user, setUser]           = useState(null);
+  const [bumpCart, setBumpCart]   = useState(false);
   const toastId = useRef(0);
 
   // Check auth on load
@@ -84,9 +100,14 @@ export default function App() {
       metaThemeColor.content = color;
       document.head.appendChild(metaThemeColor);
     }
-  }, [theme]);
+  }, [user]);
 
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+  // Sync cart to localStorage
+  useEffect(() => {
+    localStorage.setItem('khk_cart', JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  const toggleTheme = useCallback(() => {setTheme(t => t === 'dark' ? 'light' : 'dark')}, []);
 
   const addToast = useCallback((msg, type = 'info') => {
     const id = ++toastId.current;
@@ -95,19 +116,36 @@ export default function App() {
   }, []);
 
   const addToCart = useCallback((product) => {
-    setCartItems(prev => {
-      const existing = prev.find(i => i.id === product.id);
-      if (existing) {
-        addToast(`${product.name} — quantity updated`, 'info');
-        return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
+    const existing = cartItems.find(i => i.id === product.id);
+    if (existing) {
+      if (existing.qty >= product.stock) {
+        addToast(`Only ${product.stock} items available in stock`, 'error');
+        return;
+      }
+      addToast(`${product.name} — quantity updated`, 'info');
+      setBumpCart(true);
+      setTimeout(() => setBumpCart(false), 300);
+      setCartItems(cartItems.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
+    } else {
+      if (product.stock <= 0) {
+        addToast(`Item is out of stock`, 'error');
+        return;
       }
       addToast(`${product.name} added to cart`, 'success');
-      return [...prev, { ...product, qty: 1 }];
-    });
-  }, [addToast]);
+      setBumpCart(true);
+      setTimeout(() => setBumpCart(false), 300);
+      setCartItems([...cartItems, { ...product, qty: 1 }]);
+    }
+  }, [cartItems, addToast]);
 
   const updateQty = useCallback((id, d) => {
-    setCartItems(p => p.map(i => i.id === id ? { ...i, qty: Math.max(1, i.qty + d) } : i));
+    setCartItems(p => p.map(i => {
+      if (i.id === id) {
+        const clampedQty = Math.min(i.stock, Math.max(1, i.qty + d));
+        return { ...i, qty: clampedQty };
+      }
+      return i;
+    }));
   }, []);
 
   const removeFromCart = useCallback((id) => {
@@ -120,7 +158,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <div style={{ display:'flex', flexDirection:'column', minHeight:'100vh' }}>
-        <Header cartCount={cartCount} theme={theme} toggleTheme={toggleTheme} user={user} onLogout={handleLogout} />
+        <Header cartCount={cartCount} theme={theme} toggleTheme={toggleTheme} user={user} onLogout={handleLogout} bumpCart={bumpCart} />
 
         <main style={{ flex: 1 }}>
           <Routes>
@@ -135,6 +173,10 @@ export default function App() {
         </main>
 
         <Footer />
+        <a href="https://wa.me/94701234567" target="_blank" rel="noreferrer" className="floating-whatsapp">
+          <MessageCircle size={28} />
+          <div className="floating-whatsapp-tooltip">Chat with us!</div>
+        </a>
         <ToastStack toasts={toasts} />
       </div>
     </BrowserRouter>

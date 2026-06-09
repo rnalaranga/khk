@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Package, Server, AlertCircle, Edit, Trash2 } from 'lucide-react';
+import { Plus, Package, Server, AlertCircle, Edit, Trash2, Activity, Users, Car } from 'lucide-react';
 
 export default function AdminPanel({ user }) {
   const navigate = useNavigate();
-  const [tab, setTab] = useState('orders');
+  const [tab, setTab] = useState('dashboard');
   const [vehicles, setVehicles] = useState([]);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   
-  const [form, setForm] = useState({ name: '', category: 'Engine Oil', price: '', stock: '', vehicle_ids: [], image: null });
+  const [form, setForm] = useState({ name: '', category: 'Engine Oil', price: '', stock: '', description: '', vehicle_ids: [], image: null });
+  const [vForm, setVForm] = useState({ make: '', model: '', year_start: '', year_end: '' });
 
   const token = localStorage.getItem('token');
 
@@ -19,22 +23,19 @@ export default function AdminPanel({ user }) {
     
     if (!user || user.role !== 'admin') { navigate('/'); return; }
     
-    // Fetch base data
-    fetch(`/api/vehicles`).then(res => res.json()).then(data => setVehicles(data)).catch(err => console.error('Vehicles err:', err));
+    fetchVehicles();
     fetchProducts();
     fetchOrders();
+    fetchCustomers();
   }, [user, navigate]);
 
-  const fetchProducts = () => {
-    fetch(`/api/products`).then(res => res.json()).then(data => setProducts(data)).catch(err => console.error('Products err:', err));
-  };
-
-  const fetchOrders = () => {
-    fetch(`/api/orders/all`, { headers: { 'x-auth-token': token } })
-      .then(res => res.json()).then(data => setOrders(data)).catch(err => console.error('Orders err:', err));
-  };
+  const fetchVehicles = () => fetch(`/api/vehicles`).then(res => res.json()).then(data => setVehicles(data)).catch(console.error);
+  const fetchProducts = () => fetch(`/api/products`).then(res => res.json()).then(data => setProducts(data)).catch(console.error);
+  const fetchOrders = () => fetch(`/api/orders/all`, { headers: { 'x-auth-token': token } }).then(res => res.json()).then(data => setOrders(data)).catch(console.error);
+  const fetchCustomers = () => fetch(`/api/auth/users`, { headers: { 'x-auth-token': token } }).then(res => res.json()).then(data => setCustomers(data)).catch(console.error);
 
   const updateForm = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const updateVForm = (k, v) => setVForm(f => ({ ...f, [k]: v }));
   const toggleVehicle = (id) => {
     setForm(f => ({ ...f, vehicle_ids: f.vehicle_ids.includes(id) ? f.vehicle_ids.filter(v => v !== id) : [...f.vehicle_ids, id] }));
   };
@@ -47,6 +48,7 @@ export default function AdminPanel({ user }) {
       formData.append('category', form.category);
       formData.append('price', form.price);
       formData.append('stock', form.stock);
+      formData.append('description', form.description);
       formData.append('vehicle_ids', JSON.stringify(form.vehicle_ids));
       if (form.image) {
         formData.append('image', form.image);
@@ -59,8 +61,7 @@ export default function AdminPanel({ user }) {
       });
       if (res.ok) {
         alert('Product added!');
-        setForm({ name: '', category: 'Engine Oil', price: '', stock: '', vehicle_ids: [], image: null });
-        // Optional: clear file input visually
+        setForm({ name: '', category: 'Engine Oil', price: '', stock: '', description: '', vehicle_ids: [], image: null });
         const fileInput = document.getElementById('product-image-upload');
         if (fileInput) fileInput.value = '';
         fetchProducts();
@@ -74,6 +75,21 @@ export default function AdminPanel({ user }) {
     fetchProducts();
   };
 
+  const handleAddVehicle = async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/vehicles', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': token }, body: JSON.stringify(vForm) });
+    if (res.ok) {
+      setVForm({ make: '', model: '', year_start: '', year_end: '' });
+      fetchVehicles();
+    }
+  };
+
+  const handleDeleteVehicle = async (id) => {
+    if (!window.confirm("Delete this vehicle?")) return;
+    await fetch(`/api/vehicles/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
+    fetchVehicles();
+  };
+
   const handleUpdateOrder = async (orderId, newStatus, newTracking) => {
     await fetch(`/api/orders/${orderId}`, {
       method: 'PUT',
@@ -83,9 +99,37 @@ export default function AdminPanel({ user }) {
     fetchOrders();
   };
 
+  const handleBlockCustomer = async (id, currentStatus) => {
+    if (!window.confirm(`Are you sure you want to ${currentStatus ? 'unblock' : 'block'} this user?`)) return;
+    await fetch(`/api/auth/users/${id}/block`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-auth-token': token }, body: JSON.stringify({ is_blocked: !currentStatus }) });
+    fetchCustomers();
+  };
+
+  const handleDeleteCustomer = async (id) => {
+    if (!window.confirm("Delete this user permanently?")) return;
+    await fetch(`/api/auth/users/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
+    fetchCustomers();
+  };
+
   const tokenLocal = localStorage.getItem('token');
   if (!user && tokenLocal) return <div style={{ color: 'white', padding: 50, textAlign: 'center' }}>Loading Admin Panel...</div>;
   if (!user || user.role !== 'admin') return null;
+
+  const filteredOrders = orders.filter(o => {
+    if (!startDate && !endDate) return true;
+    const orderDate = new Date(o.created_at);
+    if (startDate && orderDate < new Date(startDate)) return false;
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      if (orderDate > end) return false;
+    }
+    return true;
+  });
+
+  const totalIncome = filteredOrders.filter(o => o.status === 'Delivered').reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+  const pendingCount = filteredOrders.filter(o => o.status === 'Pending').length;
+  const outOfStockCount = products.filter(p => p.stock === 0).length;
 
   return (
     <div className="container section admin-layout" style={{ minHeight: '70vh', gap: 32, display: 'flex' }}>
@@ -93,20 +137,113 @@ export default function AdminPanel({ user }) {
       {/* Sidebar */}
       <div className="admin-sidebar" style={{ width: '250px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <h2 style={{ fontFamily: 'var(--font-hero)', textTransform: 'uppercase', color: 'var(--white)' }}>Admin Panel</h2>
-        <button onClick={() => setTab('orders')} className={tab === 'orders' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}>
-          <Server size={18} /> View Orders
-        </button>
-        <button onClick={() => setTab('products')} className={tab === 'products' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}>
-          <Package size={18} /> Manage Products
-        </button>
-        <button onClick={() => setTab('add_product')} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}>
-          <Plus size={18} /> Add Product
-        </button>
+        <button onClick={() => setTab('dashboard')} className={tab === 'dashboard' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Activity size={18} /> Dashboard</button>
+        <button onClick={() => setTab('orders')} className={tab === 'orders' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Server size={18} /> View Orders</button>
+        <button onClick={() => setTab('products')} className={tab === 'products' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Package size={18} /> Manage Products</button>
+        <button onClick={() => setTab('add_product')} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Plus size={18} /> Add Product</button>
+        <button onClick={() => setTab('vehicles')} className={tab === 'vehicles' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Car size={18} /> Vehicles</button>
+        <button onClick={() => setTab('customers')} className={tab === 'customers' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Users size={18} /> Customers</button>
       </div>
 
       {/* Main Content */}
       <div className="admin-main" style={{ flex: 1, background: 'var(--glass)', border: '1px solid var(--border)', borderRadius: 16, padding: 32, overflowX: 'auto' }}>
         
+        {/* DASHBOARD TAB */}
+        {tab === 'dashboard' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+              <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', margin: 0, color: 'var(--white)' }}>Dashboard Overview</h2>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 4 }}>Start Date</label>
+                  <input type="date" className="form-input" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ padding: '8px 12px' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 4 }}>End Date</label>
+                  <input type="date" className="form-input" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ padding: '8px 12px' }} />
+                </div>
+                {(startDate || endDate) && (
+                  <button onClick={() => { setStartDate(''); setEndDate(''); }} style={{ marginTop: 20, background: 'transparent', border: '1px solid var(--border)', color: 'var(--white)', padding: '8px 12px', borderRadius: 4, cursor: 'pointer' }}>Clear</button>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
+              <div style={{ background: 'rgba(255,255,255,0.05)', padding: 24, borderRadius: 12, border: '1px solid var(--border)' }}>
+                <p style={{ color: 'var(--muted)', margin: 0, textTransform: 'uppercase', fontSize: '0.8rem' }}>Total Revenue (Delivered)</p>
+                <h3 style={{ color: 'var(--white)', fontSize: '2rem', margin: '8px 0 0' }}>Rs. {totalIncome.toLocaleString()}</h3>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.05)', padding: 24, borderRadius: 12, border: '1px solid var(--border)' }}>
+                <p style={{ color: 'var(--muted)', margin: 0, textTransform: 'uppercase', fontSize: '0.8rem' }}>Total Orders</p>
+                <h3 style={{ color: 'var(--white)', fontSize: '2rem', margin: '8px 0 0' }}>{filteredOrders.length}</h3>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.05)', padding: 24, borderRadius: 12, border: '1px solid var(--border)' }}>
+                <p style={{ color: 'var(--muted)', margin: 0, textTransform: 'uppercase', fontSize: '0.8rem' }}>Pending Orders</p>
+                <h3 style={{ color: 'var(--red)', fontSize: '2rem', margin: '8px 0 0' }}>{pendingCount}</h3>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.05)', padding: 24, borderRadius: 12, border: '1px solid var(--border)' }}>
+                <p style={{ color: 'var(--muted)', margin: 0, textTransform: 'uppercase', fontSize: '0.8rem' }}>Out of Stock</p>
+                <h3 style={{ color: 'var(--white)', fontSize: '2rem', margin: '8px 0 0' }}>{outOfStockCount}</h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CUSTOMERS TAB */}
+        {tab === 'customers' && (
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Registered Customers</h2>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
+                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Email</th><th style={{ padding: 12 }}>Phone</th><th style={{ padding: 12 }}>Status</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
+                <tbody>
+                  {customers.map(c => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: 12 }}>{c.name} {c.is_verified ? '✓' : ''}</td>
+                      <td style={{ padding: 12 }}>{c.email}</td>
+                      <td style={{ padding: 12 }}>{c.phone || '-'}</td>
+                      <td style={{ padding: 12 }}><span style={{ color: c.is_blocked ? 'var(--red)' : '#4ade80' }}>{c.is_blocked ? 'Blocked' : 'Active'}</span></td>
+                      <td style={{ padding: 12, display: 'flex', gap: 8 }}>
+                        <button onClick={() => handleBlockCustomer(c.id, c.is_blocked)} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--white)', padding: '4px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' }}>{c.is_blocked ? 'Unblock' : 'Block'}</button>
+                        <button onClick={() => handleDeleteCustomer(c.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* VEHICLES TAB */}
+        {tab === 'vehicles' && (
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Vehicle Management</h2>
+            <form onSubmit={handleAddVehicle} style={{ display: 'flex', gap: 16, marginBottom: 32, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div className="form-group" style={{ marginBottom: 0, flex: 1 }}><label className="form-label">Make</label><input required type="text" className="form-input" placeholder="Honda" value={vForm.make} onChange={e => updateVForm('make', e.target.value)} /></div>
+              <div className="form-group" style={{ marginBottom: 0, flex: 1 }}><label className="form-label">Model</label><input required type="text" className="form-input" placeholder="Civic" value={vForm.model} onChange={e => updateVForm('model', e.target.value)} /></div>
+              <div className="form-group" style={{ marginBottom: 0, flex: 1 }}><label className="form-label">Year Start</label><input type="text" className="form-input" placeholder="2010" value={vForm.year_start} onChange={e => updateVForm('year_start', e.target.value)} /></div>
+              <div className="form-group" style={{ marginBottom: 0, flex: 1 }}><label className="form-label">Year End</label><input type="text" className="form-input" placeholder="2015" value={vForm.year_end} onChange={e => updateVForm('year_end', e.target.value)} /></div>
+              <button type="submit" className="btn-primary" style={{ padding: '12px 24px' }}>Add</button>
+            </form>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
+                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>Make</th><th style={{ padding: 12 }}>Model</th><th style={{ padding: 12 }}>Years</th><th style={{ padding: 12 }}>Action</th></tr></thead>
+                <tbody>
+                  {vehicles.map(v => (
+                    <tr key={v.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: 12 }}>{v.make}</td>
+                      <td style={{ padding: 12 }}>{v.model}</td>
+                      <td style={{ padding: 12 }}>{v.year_start ? `${v.year_start} - ${v.year_end || 'Present'}` : 'Any'}</td>
+                      <td style={{ padding: 12 }}><button onClick={() => handleDeleteVehicle(v.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* ADD PRODUCT TAB */}
         {tab === 'add_product' && (
           <div>
@@ -128,6 +265,10 @@ export default function AdminPanel({ user }) {
               <div style={{ display: 'flex', gap: 20 }}>
                 <div className="form-group" style={{ flex: 1 }}><label className="form-label">Price (LKR)</label><input required type="number" className="form-input" value={form.price} onChange={e => updateForm('price', e.target.value)} /></div>
                 <div className="form-group" style={{ flex: 1 }}><label className="form-label">Stock</label><input required type="number" className="form-input" value={form.stock} onChange={e => updateForm('stock', e.target.value)} /></div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <textarea className="form-input" rows="3" placeholder="Product details..." value={form.description} onChange={e => updateForm('description', e.target.value)}></textarea>
               </div>
               <div className="form-group">
                 <label className="form-label">Product Image</label>
@@ -165,7 +306,8 @@ export default function AdminPanel({ user }) {
                 <tbody>
                   {products.map(p => (
                     <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: 12 }}>#{p.id}</td><td style={{ padding: 12 }}>{p.name}</td><td style={{ padding: 12 }}>Rs. {p.price}</td><td style={{ padding: 12 }}>{p.stock}</td>
+                      <td style={{ padding: 12 }}>#{p.id}</td><td style={{ padding: 12 }}>{p.name}</td><td style={{ padding: 12 }}>Rs. {p.price}</td>
+                      <td style={{ padding: 12 }}><span style={{ color: p.stock === 0 ? 'var(--red)' : 'inherit' }}>{p.stock === 0 ? 'Out of Stock' : p.stock}</span></td>
                       <td style={{ padding: 12, display: 'flex', gap: 8 }}>
                         <button onClick={() => handleDeleteProduct(p.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button>
                       </td>

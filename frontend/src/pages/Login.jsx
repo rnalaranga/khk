@@ -114,10 +114,19 @@ export default function Login({ onLogin, addToast }) {
         </form>
 
         {!verifyMode && (
-          <div className="auth-footer">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button type="button" className="auth-toggle" onClick={() => setIsLogin(!isLogin)}>
-              {isLogin ? 'Sign Up' : 'Sign In'}
+          <div style={{ marginTop: 24, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <hr style={{ flex: 1, borderColor: 'var(--border)', borderTop: 'none', margin: 0 }} />
+              <span style={{ color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 'bold' }}>OR</span>
+              <hr style={{ flex: 1, borderColor: 'var(--border)', borderTop: 'none', margin: 0 }} />
+            </div>
+            <button 
+              type="button" 
+              className="btn-outline" 
+              onClick={() => setIsLogin(!isLogin)}
+              style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+            >
+              {isLogin ? "Create New Account" : "Sign In to Existing Account"}
             </button>
           </div>
         )}

@@ -64,7 +64,7 @@ router.post('/', adminAuth, upload.single('image'), async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    const { name, category, price, discount_percent, stock } = req.body;
+    const { name, category, price, discount_percent, stock, description } = req.body;
     let { vehicle_ids } = req.body;
     const imageUrl = req.file ? req.file.filename : null;
 
@@ -82,8 +82,8 @@ router.post('/', adminAuth, upload.single('image'), async (req, res) => {
     }
 
     const [productRes] = await conn.query(
-      'INSERT INTO products (name, category, price, discount_percent, stock, image_url) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, category || null, price, discount_percent || 0, stock || 0, imageUrl]
+      'INSERT INTO products (name, category, price, discount_percent, stock, image_url, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, category || null, price, discount_percent || 0, stock || 0, imageUrl, description || null]
     );
 
     const productId = productRes.insertId;
@@ -112,11 +112,11 @@ router.put('/:id', adminAuth, async (req, res) => {
   try {
     await conn.beginTransaction();
     const { id } = req.params;
-    const { name, category, price, discount_percent, stock, vehicle_ids } = req.body;
+    const { name, category, price, discount_percent, stock, vehicle_ids, description } = req.body;
 
     await conn.query(
-      'UPDATE products SET name=?, category=?, price=?, discount_percent=?, stock=? WHERE id=?',
-      [name, category || null, price, discount_percent || 0, stock || 0, id]
+      'UPDATE products SET name=?, category=?, price=?, discount_percent=?, stock=?, description=? WHERE id=?',
+      [name, category || null, price, discount_percent || 0, stock || 0, description || null, id]
     );
 
     if (vehicle_ids && Array.isArray(vehicle_ids)) {

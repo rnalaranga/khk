@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Check } from 'lucide-react';
+import ProductModal from './ProductModal';
 
 const CAT_IMAGE = {
   'Engine Oil': '/prod_oil.png',
@@ -14,6 +15,7 @@ const CAT_IMAGE = {
 
 export default function ProductCard({ product, onAddToCart, vehicleSelected }) {
   const [added, setAdded] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const finalPrice = product.discount_percent > 0
     ? Math.round(product.price * (1 - product.discount_percent / 100))
@@ -37,11 +39,16 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected }) {
   };
 
   return (
-    <div className="pcard">
-      {/* Badges */}
-      <div className="pcard-badges">
-        {product.discount_percent > 0 && (
-          <span className="badge-sale">-{product.discount_percent}% OFF</span>
+    <>
+      <div className="pcard" onClick={() => setIsModalOpen(true)} style={{ cursor: 'pointer' }}>
+        {/* Badges */}
+        <div className="pcard-badges">
+        {product.stock === 0 ? (
+          <span className="badge-sale" style={{ background: '#333' }}>OUT OF STOCK</span>
+        ) : (
+          product.discount_percent > 0 && (
+            <span className="badge-sale">-{product.discount_percent}% OFF</span>
+          )
         )}
         {isCompatible && <span className="badge-compat">✓ Fits Your Car</span>}
       </div>
@@ -69,15 +76,24 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected }) {
             <span className="price-final">Rs. {finalPrice.toLocaleString()}</span>
           </div>
 
-          <button
-            className={`pcard-add-btn${added ? ' added' : ''}`}
-            onClick={handleAdd}
-            disabled={product.stock === 0}
-          >
-            {added ? <><Check size={14} /> Added</> : <><ShoppingCart size={14} /> Add</>}
-          </button>
+            <button
+              className={`pcard-add-btn${added ? ' added' : ''}`}
+              onClick={(e) => { e.stopPropagation(); handleAdd(); }}
+              disabled={product.stock === 0}
+            >
+              {product.stock === 0 ? 'Out of Stock' : (added ? <><Check size={14} /> Added</> : <><ShoppingCart size={14} /> Add</>)}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {isModalOpen && (
+        <ProductModal 
+          product={product} 
+          onClose={() => setIsModalOpen(false)} 
+          onAddToCart={onAddToCart} 
+        />
+      )}
+    </>
   );
 }

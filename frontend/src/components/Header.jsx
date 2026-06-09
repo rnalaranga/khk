@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, User, ShoppingCart, Phone, Mail, Sun, Moon, Droplets, Disc, SlidersHorizontal, FlaskConical, PackageOpen, Layers, LogOut, Shield } from 'lucide-react';
 
-export default function Header({ cartCount, theme, toggleTheme, user, onLogout }) {
+export default function Header({ cartCount, theme, toggleTheme, user, onLogout, bumpCart }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
@@ -21,7 +21,7 @@ export default function Header({ cartCount, theme, toggleTheme, user, onLogout }
             <span style={{ display:'flex', alignItems:'center', gap:6 }}>Free delivery on orders over Rs. 5,000</span>
           </div>
           <div className="topbar-right">
-            <Link to="/track">Track My Order</Link>
+            <Link to={user ? "/account" : "/login"}>Track My Order</Link>
             <Link to="/contact">Contact</Link>
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function Header({ cartCount, theme, toggleTheme, user, onLogout }
               </Link>
             )}
             
-            <Link to="/cart" className="icon-btn cart-icon-wrapper">
+            <Link to="/cart" className={`icon-btn cart-icon-wrapper ${bumpCart ? 'cart-bump' : ''}`}>
               <ShoppingCart size={22} />
               <span className="icon-label">Cart</span>
               {cartCount > 0 && <div className="cart-count">{cartCount}</div>}

@@ -36,4 +36,17 @@ router.post('/', adminAuth, async (req, res) => {
   }
 });
 
+// @route   DELETE /api/vehicles/:id
+// @desc    Delete a vehicle
+// @access  Admin Private
+router.delete('/:id', adminAuth, async (req, res) => {
+  try {
+    await db.query('DELETE FROM vehicles WHERE id = ?', [req.params.id]);
+    res.json({ message: 'Vehicle removed' });
+  } catch (error) {
+    console.error('Error deleting vehicle:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
