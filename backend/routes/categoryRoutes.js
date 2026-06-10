@@ -5,14 +5,9 @@ const path = require('path');
 const db = require('../config/db');
 const adminAuth = require('../middleware/adminAuth');
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
+const sharp = require('sharp');
+
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // @route   GET /api/categories
@@ -34,7 +29,15 @@ router.get('/', async (req, res) => {
 router.post('/', adminAuth, upload.single('image'), async (req, res) => {
   try {
     const { name } = req.body;
-    const imageUrl = req.file ? req.file.filename : null;
+    
+    let imageUrl = null;
+    if (req.file) {
+      const filename = `${Date.now()}.webp`;
+      await sharp(req.file.buffer)
+        .webp({ quality: 80 })
+        .toFile(path.join(__dirname, '../uploads', filename));
+      imageUrl = filename;
+    }
 
     if (!name) {
       return res.status(400).json({ message: 'Category name is required' });

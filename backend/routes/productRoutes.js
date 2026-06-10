@@ -5,15 +5,10 @@ const path = require('path');
 const db = require('../config/db');
 const adminAuth = require('../middleware/adminAuth');
 
-// Configure Multer for Image Uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
+const sharp = require('sharp');
+
+// Configure Multer for Image Uploads using memory storage for processing
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // @route   GET /api/products
@@ -75,7 +70,15 @@ router.post('/', adminAuth, upload.single('image'), async (req, res) => {
 
     const { name, category, price, discount_percent, stock, description } = req.body;
     let { vehicle_ids } = req.body;
-    const imageUrl = req.file ? req.file.filename : null;
+    
+    let imageUrl = null;
+    if (req.file) {
+      const filename = `${Date.now()}.webp`;
+      await sharp(req.file.buffer)
+        .webp({ quality: 80 })
+        .toFile(path.join(__dirname, '../uploads', filename));
+      imageUrl = filename;
+    }
 
     if (!name || !price) {
       return res.status(400).json({ message: 'Name and price are required' });
@@ -123,7 +126,15 @@ router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
     const { id } = req.params;
     const { name, category, price, discount_percent, stock, description } = req.body;
     let { vehicle_ids } = req.body;
-    const imageUrl = req.file ? req.file.filename : null;
+    
+    let imageUrl = null;
+    if (req.file) {
+      const filename = `${Date.now()}.webp`;
+      await sharp(req.file.buffer)
+        .webp({ quality: 80 })
+        .toFile(path.join(__dirname, '../uploads', filename));
+      imageUrl = filename;
+    }
 
     if (vehicle_ids && typeof vehicle_ids === 'string') {
       try {
