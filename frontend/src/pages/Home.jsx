@@ -215,7 +215,7 @@ export default function Home({ products, categories = [], onAddToCart }) {
             {categories.map(c => (
               <Link to={`/shop?category=${encodeURIComponent(c.name)}`} key={c.id} className="cat-strip-item">
                 {c.image_url ? (
-                  <img src={`/uploads/${c.image_url}`} alt={c.name} className="cat-strip-icon-svg" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                  <img src={`/api/uploads/${c.image_url}`} alt={c.name} className="cat-strip-icon-svg" style={{ width: 32, height: 32, objectFit: 'contain' }} />
                 ) : (
                   <PackageOpen size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />
                 )}

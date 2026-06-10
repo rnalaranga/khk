@@ -28,7 +28,7 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected }) {
   );
 
   const imageSrc = product.image_url 
-    ? `/uploads/${product.image_url}` 
+    ? `/api/uploads/${product.image_url}` 
     : (product.image || CAT_IMAGE[product.category] || '/prod_oil.png');
 
   const handleAdd = () => {

@@ -536,7 +536,7 @@ export default function AdminPanel({ user }) {
                     <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       <td style={{ padding: 12 }}>
                         {c.image_url ? (
-                          <img src={`/uploads/${c.image_url}`} alt={c.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 8 }} />
+                          <img src={`/api/uploads/${c.image_url}`} alt={c.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 8 }} />
                         ) : (
                           <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</div>
                         )}

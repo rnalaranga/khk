@@ -22,7 +22,7 @@ export default function ProductModal({ product, onClose, onAddToCart }) {
     : product.price;
 
   const imageSrc = product.image_url 
-    ? `/uploads/${product.image_url}` 
+    ? `/api/uploads/${product.image_url}` 
     : (product.image || CAT_IMAGE[product.category] || '/prod_oil.png');
 
   const handleAdd = () => {
