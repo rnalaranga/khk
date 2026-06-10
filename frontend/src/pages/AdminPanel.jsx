@@ -223,15 +223,17 @@ export default function AdminPanel({ user }) {
             <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Registered Customers</h2>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
-                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Email</th><th style={{ padding: 12 }}>Phone</th><th style={{ padding: 12 }}>Status</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
+                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Email</th><th style={{ padding: 12 }}>Phone</th><th style={{ padding: 12 }}>Address</th><th style={{ padding: 12 }}>Status</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
                 <tbody>
                   {customers.map(c => (
                     <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       <td style={{ padding: 12 }}>{c.name} {c.is_verified ? '✓' : ''}</td>
                       <td style={{ padding: 12 }}>{c.email}</td>
                       <td style={{ padding: 12 }}>{c.phone || '-'}</td>
+                      <td style={{ padding: 12 }}>{c.address ? `${c.address}, ${c.city}` : '-'}</td>
                       <td style={{ padding: 12 }}><span style={{ color: c.is_blocked ? 'var(--red)' : '#4ade80' }}>{c.is_blocked ? 'Blocked' : 'Active'}</span></td>
                       <td style={{ padding: 12, display: 'flex', gap: 8 }}>
+                        <button onClick={() => { setOrderSearch(c.email); setTab('orders'); setOrderPage(1); }} style={{ background: 'transparent', border: '1px solid #3b82f6', color: '#3b82f6', padding: '4px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' }}>Orders</button>
                         <button onClick={() => handleBlockCustomer(c.id, c.is_blocked)} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--white)', padding: '4px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' }}>{c.is_blocked ? 'Unblock' : 'Block'}</button>
                         <button onClick={() => handleDeleteCustomer(c.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button>
                       </td>
