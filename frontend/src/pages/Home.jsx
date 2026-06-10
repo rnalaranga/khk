@@ -51,16 +51,9 @@ const SLIDES = [
   },
 ];
 
-const CATEGORIES = [
-  { name: 'Engine Oil',  Icon: Droplets,          link: '/shop?category=Engine+Oil' },
-  { name: 'Brake Pads', Icon: Disc,               link: '/shop?category=Brake+Pads' },
-  { name: 'Filters',    Icon: SlidersHorizontal,  link: '/shop?category=Filters' },
-  { name: 'Coolant',    Icon: Snowflake,           link: '/shop?category=Coolant' },
-  { name: 'Chemicals',  Icon: FlaskConical,        link: '/shop?category=Chemicals' },
-  { name: 'Combo Deals',Icon: PackageOpen,         link: '/shop?category=Combo+Deals' },
-];
 
-export default function Home({ products, onAddToCart }) {
+
+export default function Home({ products, categories = [], onAddToCart }) {
   const [slide, setSlide] = useState(0);
   const [make, setMake] = useState('');
   const [model, setModel] = useState('');
@@ -219,9 +212,13 @@ export default function Home({ products, onAddToCart }) {
       <div className="category-strip">
         <div className="container">
           <div className="cat-strip-grid">
-            {CATEGORIES.map(c => (
-              <Link to={c.link} key={c.name} className="cat-strip-item">
-                <c.Icon size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />
+            {categories.map(c => (
+              <Link to={`/shop?category=${encodeURIComponent(c.name)}`} key={c.id} className="cat-strip-item">
+                {c.image_url ? (
+                  <img src={`/uploads/${c.image_url}`} alt={c.name} className="cat-strip-icon-svg" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                ) : (
+                  <PackageOpen size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />
+                )}
                 <span className="cat-strip-name">{c.name}</span>
               </Link>
             ))}

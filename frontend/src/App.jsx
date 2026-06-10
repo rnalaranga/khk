@@ -28,6 +28,7 @@ function ToastStack({ toasts }) {
 
 export default function App() {
   const [products, setProducts]   = useState([]);
+  const [categories, setCategories] = useState([]);
   const [cartItems, setCartItems] = useState(() => {
     try {
       const saved = localStorage.getItem('khk_cart');
@@ -76,12 +77,17 @@ export default function App() {
     addToast('Logged out successfully', 'info');
   };
 
-  // Fetch Products
+  // Fetch Products & Categories
   useEffect(() => {
     fetch(`/api/products`)
       .then(res => res.json())
       .then(data => setProducts(data))
       .catch(err => console.error('Failed to load products:', err));
+
+    fetch(`/api/categories`)
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(err => console.error('Failed to load categories:', err));
   }, []);
 
   // Apply theme to <html> element and update mobile status bar color
@@ -162,8 +168,8 @@ export default function App() {
 
         <main style={{ flex: 1 }}>
           <Routes>
-            <Route path="/"        element={<Home products={products} onAddToCart={addToCart} />} />
-            <Route path="/shop"    element={<Shop products={products} onAddToCart={addToCart} />} />
+            <Route path="/"        element={<Home products={products} categories={categories} onAddToCart={addToCart} />} />
+            <Route path="/shop"    element={<Shop products={products} categories={categories} onAddToCart={addToCart} />} />
             <Route path="/cart"    element={<Cart cartItems={cartItems} onUpdateQty={updateQty} onRemove={removeFromCart} />} />
             <Route path="/checkout" element={<Checkout cartItems={cartItems} user={user} onOrderSuccess={() => { setCartItems([]); addToast('Order placed!', 'success'); }} />} />
             <Route path="/login"   element={<Login onLogin={(u) => { setUser(u); addToast('Logged in successfully', 'success'); }} addToast={addToast} />} />

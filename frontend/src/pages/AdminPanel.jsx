@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Package, Server, AlertCircle, Edit, Trash2, Activity, Users, Car } from 'lucide-react';
+import { Plus, Package, PackageOpen, Server, AlertCircle, Edit, Trash2, Activity, Users, Car } from 'lucide-react';
 
 export default function AdminPanel({ user }) {
   const navigate = useNavigate();
@@ -9,6 +9,8 @@ export default function AdminPanel({ user }) {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [editingProductId, setEditingProductId] = useState(null);
@@ -22,8 +24,9 @@ export default function AdminPanel({ user }) {
   const [orderPage, setOrderPage] = useState(1);
   const ORDERS_PER_PAGE = 5;
   
-  const [form, setForm] = useState({ name: '', category: 'Engine Oil', price: '', stock: '', description: '', vehicle_ids: [], image: null });
+  const [form, setForm] = useState({ name: '', category: '', price: '', stock: '', description: '', vehicle_ids: [], image: null });
   const [vForm, setVForm] = useState({ make: '', model: '', year_start: '', year_end: '' });
+  const [cForm, setCForm] = useState({ name: '', image: null });
 
   const token = localStorage.getItem('token');
 
@@ -37,12 +40,14 @@ export default function AdminPanel({ user }) {
     fetchProducts();
     fetchOrders();
     fetchCustomers();
+    fetchCategories();
   }, [user, navigate]);
 
   const fetchVehicles = () => fetch(`/api/vehicles`).then(res => res.json()).then(data => setVehicles(data)).catch(console.error);
   const fetchProducts = () => fetch(`/api/products`).then(res => res.json()).then(data => setProducts(data)).catch(console.error);
   const fetchOrders = () => fetch(`/api/orders/all`, { headers: { 'x-auth-token': token } }).then(res => res.json()).then(data => setOrders(data)).catch(console.error);
   const fetchCustomers = () => fetch(`/api/auth/users`, { headers: { 'x-auth-token': token } }).then(res => res.json()).then(data => setCustomers(data)).catch(console.error);
+  const fetchCategories = () => fetch(`/api/categories`).then(res => res.json()).then(data => { setCategories(data); if (data.length > 0) setForm(f => ({ ...f, category: f.category || data[0].name })); }).catch(console.error);
 
   const updateForm = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updateVForm = (k, v) => setVForm(f => ({ ...f, [k]: v }));
@@ -118,6 +123,32 @@ export default function AdminPanel({ user }) {
     fetchVehicles();
   };
 
+  const handleAddCategory = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('name', cForm.name);
+    if (cForm.image) formData.append('image', cForm.image);
+
+    const res = await fetch('/api/categories', {
+      method: 'POST',
+      headers: { 'x-auth-token': token },
+      body: formData
+    });
+    if (res.ok) {
+      setCForm({ name: '', image: null });
+      fetchCategories();
+    } else {
+      const data = await res.json();
+      alert(data.message || 'Error creating category');
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm("Delete this category?")) return;
+    await fetch(`/api/categories/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
+    fetchCategories();
+  };
+
   const handleUpdateOrder = async (orderId, newStatus, newTracking) => {
     await fetch(`/api/orders/${orderId}`, {
       method: 'PUT',
@@ -168,7 +199,8 @@ export default function AdminPanel({ user }) {
         <button onClick={() => setTab('dashboard')} className={tab === 'dashboard' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Activity size={18} /> Dashboard</button>
         <button onClick={() => setTab('orders')} className={tab === 'orders' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Server size={18} /> View Orders</button>
         <button onClick={() => setTab('products')} className={tab === 'products' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Package size={18} /> Manage Products</button>
-        <button onClick={() => { setTab('add_product'); setEditingProductId(null); setForm({ name: '', category: 'Engine Oil', price: '', stock: '', description: '', vehicle_ids: [], image: null }); }} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Plus size={18} /> Add Product</button>
+        <button onClick={() => { setTab('add_product'); setEditingProductId(null); setForm({ name: '', category: categories.length > 0 ? categories[0].name : '', price: '', stock: '', description: '', vehicle_ids: [], image: null }); }} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Plus size={18} /> Add Product</button>
+        <button onClick={() => setTab('categories')} className={tab === 'categories' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><PackageOpen size={18} /> Categories</button>
         <button onClick={() => setTab('vehicles')} className={tab === 'vehicles' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Car size={18} /> Vehicles</button>
         <button onClick={() => setTab('customers')} className={tab === 'customers' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Users size={18} /> Customers</button>
       </div>
@@ -287,8 +319,9 @@ export default function AdminPanel({ user }) {
                 <div className="form-group" style={{ flex: 1 }}>
                   <label className="form-label">Category</label>
                   <select className="form-input" value={form.category} onChange={e => updateForm('category', e.target.value)}>
-                    <option value="Engine Oil">Engine Oil</option><option value="Filters">Filters</option>
-                    <option value="Brake Pads">Brake Pads</option><option value="Coolant">Coolant</option><option value="Chemicals">Chemicals</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -477,6 +510,45 @@ export default function AdminPanel({ user }) {
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {/* CATEGORIES TAB */}
+        {tab === 'categories' && (
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Category Management</h2>
+            <form onSubmit={handleAddCategory} style={{ display: 'flex', gap: 16, marginBottom: 32, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 200px' }}>
+                <label className="form-label">Category Name</label>
+                <input required type="text" className="form-input" value={cForm.name} onChange={e => setCForm({ ...cForm, name: e.target.value })} />
+              </div>
+              <div style={{ flex: '1 1 200px' }}>
+                <label className="form-label">Category Image (Optional)</label>
+                <input type="file" className="form-input" accept="image/*" onChange={e => setCForm({ ...cForm, image: e.target.files[0] })} style={{ padding: '8px 12px' }} />
+              </div>
+              <button type="submit" className="btn-primary" style={{ padding: '12px 24px', flex: '0 0 auto' }}>Add Category</button>
+            </form>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
+                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>Image</th><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
+                <tbody>
+                  {categories.map(c => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: 12 }}>
+                        {c.image_url ? (
+                          <img src={`/uploads/${c.image_url}`} alt={c.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 8 }} />
+                        ) : (
+                          <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</div>
+                        )}
+                      </td>
+                      <td style={{ padding: 12 }}>{c.name}</td>
+                      <td style={{ padding: 12 }}><button onClick={() => handleDeleteCategory(c.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button></td>
+                    </tr>
+                  ))}
+                  {categories.length === 0 && <tr><td colSpan="3" style={{ padding: 20, textAlign: 'center', color: 'var(--muted)' }}>No categories found</td></tr>}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

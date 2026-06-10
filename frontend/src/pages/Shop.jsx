@@ -3,9 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 
-const CATS = ['Engine Oil', 'Filters', 'Brake Pads', 'Coolant', 'Chemicals', 'Combo Deals', 'Wiper Blades', 'Brake Washers'];
-
-export default function Shop({ products, onAddToCart }) {
+export default function Shop({ products, categories = [], onAddToCart }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const cat = searchParams.get('category') || '';
 
@@ -27,16 +25,16 @@ export default function Shop({ products, onAddToCart }) {
                 >
                   All Products <span style={{ color:'var(--muted)', fontSize:'0.8rem', marginLeft: 8 }}>{products.length}</span>
                 </button>
-                {CATS.map(c => {
-                  const count = products.filter(p => p.category === c).length;
+                {categories.map(c => {
+                  const count = products.filter(p => p.category === c.name).length;
                   if (!count) return null;
                   return (
                     <button
-                      key={c}
-                      className={`sidebar-cat-btn${cat === c ? ' active' : ''}`}
-                      onClick={() => setSearchParams({ category: c })}
+                      key={c.id}
+                      className={`sidebar-cat-btn${cat === c.name ? ' active' : ''}`}
+                      onClick={() => setSearchParams({ category: c.name })}
                     >
-                      {c} <span style={{ color:'var(--muted)', fontSize:'0.8rem', marginLeft: 8 }}>{count}</span>
+                      {c.name} <span style={{ color:'var(--muted)', fontSize:'0.8rem', marginLeft: 8 }}>{count}</span>
                     </button>
                   );
                 })}
