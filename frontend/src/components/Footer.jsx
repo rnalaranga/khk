@@ -16,9 +16,9 @@ export default function Footer() {
               Professional grade parts for every vehicle, delivered island-wide.
             </p>
             <div style={{ display:'flex', flexDirection:'column', gap:10, marginTop:24 }}>
-              <span style={{ display:'flex', alignItems:'center', gap:8, color:'var(--muted)', fontSize:'0.85rem' }}><Phone size={14} style={{ color:'var(--red)' }}/> 011 234 5678</span>
-              <span style={{ display:'flex', alignItems:'center', gap:8, color:'var(--muted)', fontSize:'0.85rem' }}><Mail size={14} style={{ color:'var(--red)' }}/> info@khkautoparts.lk</span>
-              <span style={{ display:'flex', alignItems:'center', gap:8, color:'var(--muted)', fontSize:'0.85rem' }}><MapPin size={14} style={{ color:'var(--red)' }}/> Colombo 07, Sri Lanka</span>
+              <span style={{ display:'flex', alignItems:'center', gap:8, color:'var(--muted)', fontSize:'0.85rem' }}><Phone size={14} style={{ color:'var(--red)' }}/> +94 719 010 751 | +94 703 013 068</span>
+              <span style={{ display:'flex', alignItems:'center', gap:8, color:'var(--muted)', fontSize:'0.85rem' }}><Mail size={14} style={{ color:'var(--red)' }}/> autopartskhk@gmail.com</span>
+              <span style={{ display:'flex', alignItems:'center', gap:8, color:'var(--muted)', fontSize:'0.85rem', lineHeight: 1.4 }}><MapPin size={14} style={{ color:'var(--red)', flexShrink:0 }}/> 1530, Matale road, Alawathugoda, Kandy.</span>
             </div>
           </div>
 

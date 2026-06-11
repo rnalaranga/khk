@@ -31,14 +31,18 @@ const sendInvoiceEmail = async (email, userDetails, order, items) => {
   const invoiceNo = String(order.id).padStart(7, '0');
 
   // Build items HTML
-  const itemsHtml = items.map(item => `
+  const itemsHtml = items.map(item => {
+    const itemQty = item.qty || item.quantity;
+    const itemPrice = item.finalPrice || item.price;
+    return `
     <tr>
       <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; color: #333; font-size: 14px;">${item.name}</td>
-      <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; text-align: right; color: #333; font-size: 14px;">${Number(item.price).toLocaleString()}</td>
-      <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; text-align: center; color: #333; font-size: 14px;">${item.quantity}</td>
-      <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; text-align: right; color: #333; font-size: 14px;">${(item.price * item.quantity).toLocaleString()}</td>
+      <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; text-align: right; color: #333; font-size: 14px;">${Number(itemPrice).toLocaleString()}</td>
+      <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; text-align: center; color: #333; font-size: 14px;">${itemQty}</td>
+      <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; text-align: right; color: #333; font-size: 14px;">${(itemPrice * itemQty).toLocaleString()}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   const htmlContent = `
   <!DOCTYPE html>
@@ -67,7 +71,10 @@ const sendInvoiceEmail = async (email, userDetails, order, items) => {
                 <h1 style="color: #9c1c15; margin: 0 0 5px 0; font-size: 24px; font-family: Arial, sans-serif;">KHK AUTO PARTS</h1>
                 <p style="margin: 0; color: #666; font-size: 13px; line-height: 1.5;">
                   1530, Matale road, Alawathugoda<br>
-                  Kandy.
+                  Kandy.<br><br>
+                  <strong>Tel:</strong> +94 719 010 751 | +94 703 013 068<br>
+                  <strong>Email:</strong> autopartskhk@gmail.com<br>
+                  <strong>Web:</strong> www.khkautoparts.com
                 </p>
               </td>
               <td style="vertical-align: top; text-align: right;">
@@ -77,6 +84,14 @@ const sendInvoiceEmail = async (email, userDetails, order, items) => {
           </table>
 
           <hr style="border: none; border-top: 1px solid #9c1c15; margin-bottom: 20px;">
+
+          <!-- Thank You Message -->
+          <div style="background-color: #fff9f9; border-left: 4px solid #9c1c15; padding: 15px 20px; margin-bottom: 25px; border-radius: 0 4px 4px 0;">
+            <p style="margin: 0; color: #444; font-size: 14px; line-height: 1.6;">
+              <strong style="color: #9c1c15; font-size: 16px;">Hi ${userDetails.name},</strong><br><br>
+              Thank you for trusting <strong>KHK Auto Parts</strong>! We have successfully received your order and it is currently being processed. We truly appreciate your business and hope our premium products keep your vehicle running smoothly. Please find your invoice details below.
+            </p>
+          </div>
 
           <!-- Billing Info -->
           <table width="100%" style="border-collapse: collapse; margin-bottom: 30px;">

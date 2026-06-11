@@ -87,7 +87,10 @@ router.post('/', auth, async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    const { items, total_amount, payment_method, shipping_address, shipping_city, shipping_phone } = req.body;
+    const { items, total_amount, payment_method, address, city, phone, shipping_address: sa, shipping_city: sc, shipping_phone: sp } = req.body;
+    const shipping_address = address || sa;
+    const shipping_city = city || sc;
+    const shipping_phone = phone || sp;
     const userId = req.user.id;
 
     if (!items || items.length === 0) {
@@ -105,7 +108,7 @@ router.post('/', auth, async (req, res) => {
     for (const item of items) {
       await connection.query(
         'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
-        [orderId, item.id, item.qty, item.price]
+        [orderId, item.id, item.qty, item.finalPrice || item.price]
       );
 
       // Deduct stock
