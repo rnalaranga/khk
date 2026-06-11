@@ -3,7 +3,15 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronLeft, ChevronRight, Droplets, Disc, SlidersHorizontal, FlaskConical, PackageOpen, Snowflake, ChevronDown, Truck, ShieldCheck, Lock } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 
-
+const getCategoryIcon = (name) => {
+  const n = name.toLowerCase();
+  if (n.includes('oil') || n.includes('fluid')) return <Droplets size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
+  if (n.includes('brake') || n.includes('pad') || n.includes('shoe')) return <Disc size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
+  if (n.includes('filter')) return <SlidersHorizontal size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
+  if (n.includes('chemical') || n.includes('additive')) return <FlaskConical size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
+  if (n.includes('coolant')) return <Snowflake size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
+  return <PackageOpen size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
+};
 const SLIDES = [
   {
     bg: '/slide_oil.png',
@@ -211,11 +219,7 @@ export default function Home({ products, categories = [], onAddToCart }) {
           <div className="cat-strip-grid">
             {categories.map(c => (
               <Link to={`/shop?category=${encodeURIComponent(c.name)}`} key={c.id} className="cat-strip-item">
-                {c.image_url ? (
-                  <img src={`/api/uploads/${c.image_url}`} alt={c.name} className="cat-strip-icon-svg" style={{ width: 32, height: 32, objectFit: 'contain' }} />
-                ) : (
-                  <PackageOpen size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />
-                )}
+                {getCategoryIcon(c.name)}
                 <span className="cat-strip-name">{c.name}</span>
               </Link>
             ))}

@@ -419,7 +419,11 @@ img { display: block; }
   color: var(--muted);
   transition: color var(--t), transform 0.3s ease;
 }
-.cat-strip-item:hover .cat-strip-icon-svg { color: var(--red); transform: scale(1.15); }
+@keyframes catIconBounce {
+  0%, 100% { transform: translateY(0) scale(1.15); color: var(--red); }
+  50% { transform: translateY(-5px) scale(1.15); color: #ff3333; }
+}
+.cat-strip-item:hover .cat-strip-icon-svg { animation: catIconBounce 0.8s ease-in-out infinite; color: var(--red); }
 .cat-strip-icon { font-size: 2rem; }
 .cat-strip-name {
   font-family: var(--font-hero); font-size: 0.85rem; font-weight: 700;
