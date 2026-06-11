@@ -489,15 +489,15 @@ img { display: block; }
 
 .pcard-img-wrap {
   height: 220px; display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.03); padding: 24px; overflow: hidden;
+  background: rgba(255,255,255,0.03); padding: 0; overflow: hidden;
   border-bottom: 1px solid var(--glass-border);
 }
 .pcard-img-wrap img {
-  max-height: 160px; width: auto; max-width: 100%;
-  object-fit: contain; transition: transform 0.4s var(--ease);
+  height: 100%; width: 100%;
+  object-fit: cover; transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   filter: none;
 }
-.pcard:hover .pcard-img-wrap img { transform: scale(1.06); }
+.pcard:hover .pcard-img-wrap img { transform: scale(1.15); }
 
 .pcard-badges {
   position: absolute; top: 12px; left: 12px;
@@ -916,9 +916,9 @@ option {
   .slider-controls { right: 16px; bottom: 16px; }
   
   /* Product grids */
-  .product-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px; }
-  .pcard-img-wrap { height: 120px; padding: 8px; }
-  .pcard-img-wrap img { max-height: 90px; }
+  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .pcard-img-wrap { height: 140px; padding: 0; }
+  .pcard-img-wrap img { max-height: none; height: 100%; width: 100%; object-fit: cover; }
   .pcard-body { padding: 12px; }
   .pcard-cat { font-size: 0.6rem; margin-bottom: 4px; }
   .pcard-name { font-size: 0.8rem; line-height: 1.2; margin-bottom: 6px; }
