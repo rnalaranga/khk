@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
 export default function Login({ onLogin, addToast }) {
@@ -7,7 +7,8 @@ export default function Login({ onLogin, addToast }) {
   const [verifyMode, setVerifyMode] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', code: '' });
   const navigate = useNavigate();
-
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/';
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e) => {
@@ -25,7 +26,7 @@ export default function Login({ onLogin, addToast }) {
         if (addToast) addToast(data.message, 'success');
         localStorage.setItem('token', data.token);
         if (onLogin) onLogin(data.user);
-        navigate('/');
+        navigate(redirect);
         return;
       }
 
@@ -55,7 +56,7 @@ export default function Login({ onLogin, addToast }) {
       } else {
         localStorage.setItem('token', data.token);
         if (onLogin) onLogin(data.user);
-        navigate('/');
+        navigate(redirect);
       }
     } catch (error) {
       if (addToast) addToast(error.message, 'error');

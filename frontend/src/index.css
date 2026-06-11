@@ -488,7 +488,7 @@ img { display: block; }
 .pcard:hover::after { transform: scaleX(1); }
 
 .pcard-img-wrap {
-  height: 220px; display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 1 / 1; width: 100%; display: flex; align-items: center; justify-content: center;
   background: rgba(255,255,255,0.03); padding: 0; overflow: hidden;
   border-bottom: 1px solid var(--glass-border);
 }
@@ -917,7 +917,7 @@ option {
   
   /* Product grids */
   .product-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .pcard-img-wrap { height: 140px; padding: 0; }
+  .pcard-img-wrap { aspect-ratio: 1 / 1; width: 100%; padding: 0; }
   .pcard-img-wrap img { max-height: none; height: 100%; width: 100%; object-fit: cover; }
   .pcard-body { padding: 12px; }
   .pcard-cat { font-size: 0.6rem; margin-bottom: 4px; }

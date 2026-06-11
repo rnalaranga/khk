@@ -12,6 +12,10 @@ export default function Checkout({ cartItems, onOrderSuccess, user }) {
 
   // Pre-fill form if user is logged in
   React.useEffect(() => {
+    if (!localStorage.getItem('token')) {
+      navigate('/login?redirect=/checkout');
+      return;
+    }
     if (user) {
       const parts = user.name ? user.name.split(' ') : [];
       setForm(f => ({

@@ -37,7 +37,7 @@ export default function Cart({ cartItems, onUpdateQty, onRemove }) {
             {cartItems.map(item => (
               <div key={item.id} className="cart-row">
                 <img
-                  src={item.image || '/prod_oil.png'}
+                  src={item.image_url ? `/api/uploads/${item.image_url}` : (item.image || '/prod_oil.png')}
                   alt={item.name}
                   className="cart-img"
                 />

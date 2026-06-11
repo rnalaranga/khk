@@ -3,14 +3,6 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronLeft, ChevronRight, Droplets, Disc, SlidersHorizontal, FlaskConical, PackageOpen, Snowflake, ChevronDown, Truck, ShieldCheck, Lock } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 
-const MAKES = ['Toyota', 'Honda', 'Nissan', 'Mitsubishi', 'Suzuki'];
-const MODELS = {
-  Toyota: ['Corolla', 'Prius', 'Aqua', 'Vitz'],
-  Honda: ['Civic', 'Fit', 'Vezel', 'CR-V'],
-  Nissan: ['Navara', 'X-Trail', 'Sunny'],
-  Mitsubishi: ['Montero', 'Lancer'],
-  Suzuki: ['Swift', 'Wagon R', 'Alto'],
-};
 
 const SLIDES = [
   {
@@ -59,13 +51,18 @@ export default function Home({ products, categories = [], onAddToCart }) {
   const [model, setModel] = useState('');
   const [year, setYear] = useState('');
   const [vehicleSelected, setVehicleSelected] = useState(null);
+  const [vehicles, setVehicles] = useState([]);
   const dealsRef = useRef(null);
 
   // Auto-advance slider
   useEffect(() => {
     const timer = setInterval(() => setSlide(s => (s + 1) % SLIDES.length), 5000);
+    fetch('/api/vehicles').then(res => res.json()).then(data => setVehicles(data)).catch(console.error);
     return () => clearInterval(timer);
   }, []);
+
+  const dynamicMakes = [...new Set(vehicles.map(v => v.make))].sort();
+  const dynamicModels = [...new Set(vehicles.filter(v => v.make === make).map(v => v.model))].sort();
 
   const hotDeals = products.filter(p => p.discount_percent > 0);
   const featured = products.slice(0, 8);
@@ -162,7 +159,7 @@ export default function Home({ products, categories = [], onAddToCart }) {
                 <span className={`veh-selector-val ${!make ? 'placeholder' : ''}`}>{make || 'Select Make'}</span>
                 <select className="veh-native-select" value={make} onChange={e => { setMake(e.target.value); setModel(''); }}>
                   <option value="">Select Make</option>
-                  {MAKES.map(m => <option key={m} value={m}>{m}</option>)}
+                  {dynamicMakes.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
                 <div className="veh-chevron"><ChevronDown size={20}/></div>
               </div>
@@ -172,7 +169,7 @@ export default function Home({ products, categories = [], onAddToCart }) {
                 <span className={`veh-selector-val ${!model ? 'placeholder' : ''}`}>{model || 'Select Model'}</span>
                 <select className="veh-native-select" value={model} onChange={e => setModel(e.target.value)} disabled={!make}>
                   <option value="">Select Model</option>
-                  {(MODELS[make] || []).map(m => <option key={m} value={m}>{m}</option>)}
+                  {dynamicModels.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
                 <div className="veh-chevron"><ChevronDown size={20}/></div>
               </div>
