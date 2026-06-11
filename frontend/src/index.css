@@ -454,7 +454,7 @@ img { display: block; }
 /* ═══════════════════════════════
    PRODUCT CARD
 ═══════════════════════════════ */
-.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2px; }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
 
 .pcard {
   background: var(--glass-bg);
@@ -463,7 +463,7 @@ img { display: block; }
   border: 1px solid var(--glass-border);
   display: flex; flex-direction: column;
   transition: border-color var(--t), background var(--t), transform var(--t), box-shadow var(--t);
-  position: relative; overflow: hidden;
+  position: relative; overflow: hidden; border-radius: 16px;
 }
 .pcard:hover {
   border-color: rgba(228,0,15,0.5);
@@ -489,12 +489,12 @@ img { display: block; }
 
 .pcard-img-wrap {
   aspect-ratio: 1 / 1; width: 100%; display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.03); padding: 0; overflow: hidden;
+  background: rgba(255,255,255,0.03); padding: 24px; overflow: hidden;
   border-bottom: 1px solid var(--glass-border);
 }
 .pcard-img-wrap img {
   height: 100%; width: 100%;
-  object-fit: cover; transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  object-fit: contain; transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   filter: none;
 }
 .pcard:hover .pcard-img-wrap img { transform: scale(1.15); }
@@ -916,9 +916,9 @@ option {
   .slider-controls { right: 16px; bottom: 16px; }
   
   /* Product grids */
-  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .pcard-img-wrap { aspect-ratio: 1 / 1; width: 100%; padding: 0; }
-  .pcard-img-wrap img { max-height: none; height: 100%; width: 100%; object-fit: cover; }
+  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .pcard-img-wrap { aspect-ratio: 1 / 1; width: 100%; padding: 16px; }
+  .pcard-img-wrap img { max-height: none; height: 100%; width: 100%; object-fit: contain; }
   .pcard-body { padding: 12px; }
   .pcard-cat { font-size: 0.6rem; margin-bottom: 4px; }
   .pcard-name { font-size: 0.8rem; line-height: 1.2; margin-bottom: 6px; }

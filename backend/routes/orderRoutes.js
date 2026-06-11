@@ -4,6 +4,7 @@ const db = require('../config/db');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
 const jwt = require('jsonwebtoken');
+const { sendInvoiceEmail } = require('../utils/emailService');
 
 // @route   GET /api/orders/my-orders
 // @desc    Get logged in user's orders
@@ -116,6 +117,26 @@ router.post('/', auth, async (req, res) => {
 
     await connection.commit();
     connection.release();
+
+    // Send invoice email asynchronously
+    (async () => {
+      try {
+        const [users] = await db.query('SELECT name, email FROM users WHERE id = ?', [userId]);
+        if (users.length > 0) {
+          const user = users[0];
+          const orderData = {
+            id: orderId,
+            total_amount,
+            shipping_address,
+            shipping_city,
+            created_at: new Date()
+          };
+          await sendInvoiceEmail(user.email, user, orderData, items);
+        }
+      } catch (emailErr) {
+        console.error('Failed to send invoice email:', emailErr);
+      }
+    })();
 
     res.status(201).json({ message: 'Order created successfully', orderId });
 
