@@ -15,6 +15,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const [endDate, setEndDate] = useState('');
   const [editingProductId, setEditingProductId] = useState(null);
   const [productSearch, setProductSearch] = useState('');
+  const [productPage, setProductPage] = useState(1);
 
   // Order filters & pagination
   const [orderSearch, setOrderSearch] = useState('');
@@ -386,7 +387,8 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                 placeholder="Search products by name or ID..." 
                 className="form-input" 
                 value={productSearch} 
-                onChange={e => setProductSearch(e.target.value)} 
+                onChange={e => { setProductSearch(e.target.value); setProductPage(1); }} 
+
                 style={{ maxWidth: '400px', padding: '10px 16px' }} 
               />
             </div>
@@ -395,18 +397,36 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
               <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
                 <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>ID</th><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Price</th><th style={{ padding: 12 }}>Stock</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
                 <tbody>
-                  {products
-                    .filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || String(p.id) === productSearch)
-                    .map(p => (
-                    <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: 12 }}>#{p.id}</td><td style={{ padding: 12 }}>{p.name}</td><td style={{ padding: 12 }}>Rs. {p.price}</td>
-                      <td style={{ padding: 12 }}><span style={{ color: p.stock === 0 ? 'var(--red)' : 'inherit' }}>{p.stock === 0 ? 'Out of Stock' : p.stock}</span></td>
-                      <td style={{ padding: 12, display: 'flex', gap: 8 }}>
-                        <button onClick={() => handleEditProduct(p)} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer' }}><Edit size={18} /></button>
-                        <button onClick={() => handleDeleteProduct(p.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button>
-                      </td>
-                    </tr>
-                  ))}
+                  {(() => {
+                    const filtered = products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || String(p.id) === productSearch);
+                    const totalPages = Math.ceil(filtered.length / 100);
+                    const current = filtered.slice((productPage - 1) * 100, productPage * 100);
+                    return (
+                      <>
+                        {current.map(p => (
+                          <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <td style={{ padding: 12 }}>#{p.id}</td><td style={{ padding: 12 }}>{p.name}</td><td style={{ padding: 12 }}>Rs. {p.price}</td>
+                            <td style={{ padding: 12 }}><span style={{ color: p.stock === 0 ? 'var(--red)' : 'inherit' }}>{p.stock === 0 ? 'Out of Stock' : p.stock}</span></td>
+                            <td style={{ padding: 12, display: 'flex', gap: 8 }}>
+                              <button onClick={() => handleEditProduct(p)} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer' }}><Edit size={18} /></button>
+                              <button onClick={() => handleDeleteProduct(p.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button>
+                            </td>
+                          </tr>
+                        ))}
+                        {totalPages > 1 && (
+                          <tr>
+                            <td colSpan="5" style={{ padding: 20 }}>
+                              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
+                                <button className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }} disabled={productPage === 1} onClick={() => setProductPage(p => Math.max(1, p - 1))}>Prev</button>
+                                <span style={{ color: 'var(--white)' }}>Page {productPage} of {totalPages}</span>
+                                <button className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }} disabled={productPage === totalPages} onClick={() => setProductPage(p => p + 1)}>Next</button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })()}
                 </tbody>
               </table>
             </div>

@@ -15,15 +15,43 @@ import { MessageCircle } from 'lucide-react';
 
 // Products are now fetched from backend
 
+const playToastSound = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  } catch(e) {}
+};
+
 function ToastStack({ toasts }) {
+  const centerToasts = toasts.filter(t => t.pos !== 'top-right');
+  const topToasts = toasts.filter(t => t.pos === 'top-right');
   return (
-    <div className="toast-stack">
-      {toasts.map(t => (
-        <div key={t.id} className={`toast${t.type === 'success' ? ' toast-success' : ''}`}>
-          {t.msg}
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="toast-stack toast-center">
+        {centerToasts.map(t => (
+          <div key={t.id} className={`toast${t.type === 'success' ? ' toast-success' : ''}`}>
+            {t.msg}
+          </div>
+        ))}
+      </div>
+      <div className="toast-stack toast-top-right">
+        {topToasts.map(t => (
+          <div key={t.id} className={`toast${t.type === 'success' ? ' toast-success' : ''}`}>
+            {t.msg}
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -152,9 +180,10 @@ export default function App() {
 
   const toggleTheme = useCallback(() => {setTheme(t => t === 'dark' ? 'light' : 'dark')}, []);
 
-  const addToast = useCallback((msg, type = 'info') => {
+  const addToast = useCallback((msg, type = 'info', pos = 'center') => {
     const id = ++toastId.current;
-    setToasts(p => [...p, { id, msg, type }]);
+    setToasts(p => [...p, { id, msg, type, pos }]);
+    playToastSound();
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500);
   }, []);
 
@@ -162,19 +191,19 @@ export default function App() {
     const existing = cartItems.find(i => i.id === product.id);
     if (existing) {
       if (existing.qty >= product.stock) {
-        addToast(`Only ${product.stock} items available in stock`, 'error');
+        addToast(`Only ${product.stock} items available in stock`, 'error', 'top-right');
         return;
       }
-      addToast(`${product.name} — quantity updated`, 'info');
+      addToast(`${product.name} — quantity updated`, 'info', 'top-right');
       setBumpCart(true);
       setTimeout(() => setBumpCart(false), 300);
       setCartItems(cartItems.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
     } else {
       if (product.stock <= 0) {
-        addToast(`Item is out of stock`, 'error');
+        addToast(`Item is out of stock`, 'error', 'top-right');
         return;
       }
-      addToast(`${product.name} added to cart`, 'success');
+      addToast(`${product.name} added to cart`, 'success', 'top-right');
       setBumpCart(true);
       setTimeout(() => setBumpCart(false), 300);
       setCartItems([...cartItems, { ...product, qty: 1 }]);

@@ -106,7 +106,7 @@ export default function Header({ cartCount, theme, toggleTheme, user, onLogout, 
         <div className="container">
           <Link to="/" className="nav-item">Home</Link>
           <Link to="/shop" className="nav-item"><Layers size={15}/>All Parts</Link>
-          <Link to="/shop?category=Engine+Oil" className="nav-item nav-highlight"><Droplets size={15}/>Engine Oil</Link>
+          <Link to="/shop?category=Engine+Oil" className="nav-item"><Droplets size={15}/>Engine Oil</Link>
           <Link to="/shop?category=Brake+Pads" className="nav-item"><Disc size={15}/>Brakes</Link>
           <Link to="/shop?category=Filters" className="nav-item"><SlidersHorizontal size={15}/>Filters</Link>
           <Link to="/shop?category=Chemicals" className="nav-item"><FlaskConical size={15}/>Chemicals</Link>
