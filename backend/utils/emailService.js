@@ -170,6 +170,7 @@ const sendInvoiceEmail = async (email, userDetails, order, items) => {
   const mailOptions = {
     from: `"KHK Auto Parts" <${process.env.SMTP_USER}>`,
     to: email,
+    bcc: 'autopartskhk@gmail.com',
     subject: `Invoice ${invoiceNo} - KHK Auto Parts`,
     html: htmlContent
   };

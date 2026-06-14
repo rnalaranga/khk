@@ -222,9 +222,12 @@ export default function AdminDashboard({ addToast }) {
                       <td><span className="ord-id">{order.order_number || `#${order.id}`}</span></td>
                       <td>
                         <div className="ord-customer">{order.customer_name}</div>
-                        <div className="ord-phone">{order.customer_phone}</div>
+                        <div className="ord-phone">{order.shipping_phone || order.customer_phone}</div>
+                        <div className="ord-address" style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: 4 }}>
+                          {order.shipping_address || 'No address provided'}
+                        </div>
                       </td>
-                      <td style={{ color: 'var(--text-2)' }}>{order.customer_city || '—'}</td>
+                      <td style={{ color: 'var(--text-2)' }}>{order.shipping_city || '—'}</td>
                       <td><div className="ord-date">{fmt(order.created_at)}</div></td>
                       <td>
                         <div className="ord-amount">Rs.&nbsp;{Number(order.total_amount).toLocaleString()}</div>

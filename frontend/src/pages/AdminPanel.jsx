@@ -14,6 +14,7 @@ export default function AdminPanel({ user }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [editingProductId, setEditingProductId] = useState(null);
+  const [productSearch, setProductSearch] = useState('');
 
   // Order filters & pagination
   const [orderSearch, setOrderSearch] = useState('');
@@ -363,11 +364,25 @@ export default function AdminPanel({ user }) {
         {tab === 'products' && (
           <div>
             <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Manage Products</h2>
+            
+            <div style={{ marginBottom: 24 }}>
+              <input 
+                type="text" 
+                placeholder="Search products by name or ID..." 
+                className="form-input" 
+                value={productSearch} 
+                onChange={e => setProductSearch(e.target.value)} 
+                style={{ maxWidth: '400px', padding: '10px 16px' }} 
+              />
+            </div>
+
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
                 <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>ID</th><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Price</th><th style={{ padding: 12 }}>Stock</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
                 <tbody>
-                  {products.map(p => (
+                  {products
+                    .filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || String(p.id) === productSearch)
+                    .map(p => (
                     <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       <td style={{ padding: 12 }}>#{p.id}</td><td style={{ padding: 12 }}>{p.name}</td><td style={{ padding: 12 }}>Rs. {p.price}</td>
                       <td style={{ padding: 12 }}><span style={{ color: p.stock === 0 ? 'var(--red)' : 'inherit' }}>{p.stock === 0 ? 'Out of Stock' : p.stock}</span></td>
@@ -461,34 +476,41 @@ export default function AdminPanel({ user }) {
                       <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>No orders match your filters.</div>
                     )}
                     {paginated.map(o => (
-                      <div key={o.id} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: 8, padding: 20 }}>
+                      <div key={o.id} style={{ 
+                        background: 'var(--glass-bg)', 
+                        backdropFilter: 'blur(var(--glass-blur))',
+                        border: '1px solid var(--glass-border)', 
+                        borderRadius: 12, 
+                        padding: 24,
+                        boxShadow: 'var(--shadow)'
+                      }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
                           <div>
-                            <h3 style={{ color: 'var(--white)', margin: 0 }}>Order #{o.id} <span style={{ fontSize: '0.8rem', padding: '4px 8px', borderRadius: 12, background: o.status === 'Delivered' ? '#166534' : o.status === 'Cancelled' ? '#4B1113' : '#7C2D12', color: 'white' }}>{o.status}</span></h3>
-                            <p style={{ color: 'var(--muted)', margin: '4px 0 0 0', fontSize: '0.9rem' }}>{new Date(o.created_at).toLocaleString()}</p>
+                            <h3 style={{ color: 'var(--text)', margin: 0 }}>Order #{o.id} <span style={{ fontSize: '0.8rem', padding: '4px 8px', borderRadius: 12, background: o.status === 'Delivered' ? '#166534' : o.status === 'Cancelled' ? '#4B1113' : '#7C2D12', color: 'white' }}>{o.status}</span></h3>
+                            <p style={{ color: 'var(--text-2)', margin: '4px 0 0 0', fontSize: '0.9rem' }}>{new Date(o.created_at).toLocaleString()}</p>
                           </div>
                           <div style={{ textAlign: 'right' }}>
-                            <p style={{ color: 'var(--white)', fontWeight: 'bold', margin: 0, fontSize: '1.2rem' }}>Rs. {Number(o.total_amount).toLocaleString()}</p>
-                            <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem', textTransform: 'uppercase' }}>{o.payment_method === 'cod' ? 'Cash on Delivery' : o.payment_method === 'bank' ? 'Bank Transfer' : 'Card'}</p>
+                            <p style={{ color: 'var(--text)', fontWeight: 'bold', margin: 0, fontSize: '1.2rem' }}>Rs. {Number(o.total_amount).toLocaleString()}</p>
+                            <p style={{ color: 'var(--text-2)', margin: 0, fontSize: '0.9rem', textTransform: 'uppercase' }}>{o.payment_method === 'cod' ? 'Cash on Delivery' : o.payment_method === 'bank' ? 'Bank Transfer' : 'Card'}</p>
                           </div>
                         </div>
                         
-                        <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+                        <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', borderTop: '1px solid var(--glass-border)', paddingTop: 16 }}>
                           <div style={{ flex: 1, minWidth: '200px' }}>
-                            <h4 style={{ color: 'var(--white)', marginBottom: 8, fontSize: '0.9rem', textTransform: 'uppercase' }}>Customer & Shipping</h4>
-                            <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}><strong>{o.customer_name}</strong> ({o.customer_email})</p>
-                            <p style={{ color: 'var(--muted)', margin: '4px 0', fontSize: '0.9rem' }}>{o.shipping_address || 'No address'}, {o.shipping_city}</p>
-                            <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}>📞 {o.shipping_phone}</p>
+                            <h4 style={{ color: 'var(--text)', marginBottom: 8, fontSize: '0.9rem', textTransform: 'uppercase' }}>Customer & Shipping</h4>
+                            <p style={{ color: 'var(--text-2)', margin: 0, fontSize: '0.9rem' }}><strong>{o.customer_name}</strong> ({o.customer_email})</p>
+                            <p style={{ color: 'var(--text-2)', margin: '4px 0', fontSize: '0.9rem' }}>{o.shipping_address || 'No address'}, {o.shipping_city}</p>
+                            <p style={{ color: 'var(--text-2)', margin: 0, fontSize: '0.9rem' }}>📞 {o.shipping_phone}</p>
                           </div>
                           <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                             <div>
-                              <label style={{ display: 'block', color: 'var(--muted)', fontSize: '0.8rem', marginBottom: 4 }}>Update Status</label>
+                              <label style={{ display: 'block', color: 'var(--text-2)', fontSize: '0.8rem', marginBottom: 4 }}>Update Status</label>
                               <select className="form-input" value={o.status} onChange={(e) => handleUpdateOrder(o.id, e.target.value, o.tracking_number)}>
                                 <option value="Pending">Pending</option><option value="Processing">Processing</option><option value="Shipped">Shipped</option><option value="Delivered">Delivered</option><option value="Cancelled">Cancelled</option>
                               </select>
                             </div>
                             <div>
-                              <label style={{ display: 'block', color: 'var(--muted)', fontSize: '0.8rem', marginBottom: 4 }}>Tracking Number</label>
+                              <label style={{ display: 'block', color: 'var(--text-2)', fontSize: '0.8rem', marginBottom: 4 }}>Tracking Number</label>
                               <input type="text" className="form-input" placeholder="e.g. TRK123456789" value={o.tracking_number || ''} onChange={(e) => { const val = e.target.value; setOrders(orders.map(order => order.id === o.id ? { ...order, tracking_number: val } : order)); }} onBlur={(e) => handleUpdateOrder(o.id, o.status, e.target.value)} />
                             </div>
                           </div>

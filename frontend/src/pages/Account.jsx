@@ -108,13 +108,21 @@ export default function Account({ user, setUser }) {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
             {orders.map(order => (
-              <div key={order.id} className="checkout-block" style={{ padding: '24px', marginBottom: 0 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid var(--border)', paddingBottom:16, marginBottom:16 }}>
+              <div key={order.id} style={{ 
+                padding: '24px', 
+                marginBottom: 0,
+                background: 'var(--glass-bg)',
+                backdropFilter: 'blur(var(--glass-blur))',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '12px',
+                boxShadow: 'var(--shadow)'
+              }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid var(--glass-border)', paddingBottom:16, marginBottom:16 }}>
                   <div>
-                    <div style={{ fontFamily:'var(--font-hero)', fontSize:'1.1rem', fontWeight:800, textTransform:'uppercase', color:'var(--white)' }}>
+                    <div style={{ fontFamily:'var(--font-hero)', fontSize:'1.1rem', fontWeight:800, textTransform:'uppercase', color:'var(--text)' }}>
                       Order #{order.id}
                     </div>
-                    <div style={{ color:'var(--muted)', fontSize:'0.85rem', marginTop:4 }}>
+                    <div style={{ color:'var(--text-2)', fontSize:'0.85rem', marginTop:4 }}>
                       Placed on {new Date(order.created_at).toLocaleDateString()}
                     </div>
                   </div>
@@ -127,14 +135,14 @@ export default function Account({ user, setUser }) {
                 <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                   {order.items.map((item, i) => (
                     <div key={i} style={{ display:'flex', justifyContent:'space-between', fontSize:'0.9rem' }}>
-                      <span style={{ color:'var(--muted)' }}>{item.quantity}× {item.name}</span>
-                      <strong style={{ color:'var(--white)' }}>Rs. {(item.price * item.quantity).toLocaleString()}</strong>
+                      <span style={{ color:'var(--text-2)' }}>{item.quantity}× {item.name}</span>
+                      <strong style={{ color:'var(--text)' }}>Rs. {(item.price * item.quantity).toLocaleString()}</strong>
                     </div>
                   ))}
                 </div>
 
-                <div style={{ borderTop:'1px dashed var(--border)', marginTop:16, paddingTop:16, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <span style={{ color:'var(--muted)', fontSize:'0.85rem' }}>Payment: {order.payment_method === 'cod' ? 'Cash on Delivery' : 'Card'}</span>
+                <div style={{ borderTop:'1px dashed var(--glass-border)', marginTop:16, paddingTop:16, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <span style={{ color:'var(--text-2)', fontSize:'0.85rem' }}>Payment: {order.payment_method === 'cod' ? 'Cash on Delivery' : 'Card'}</span>
                   <strong style={{ fontSize:'1.1rem', color:'var(--red)' }}>Total: Rs. {Number(order.total_amount).toLocaleString()}</strong>
                 </div>
               </div>
