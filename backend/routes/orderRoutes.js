@@ -4,7 +4,7 @@ const db = require('../config/db');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
 const jwt = require('jsonwebtoken');
-const { sendInvoiceEmail } = require('../utils/emailService');
+const { sendInvoiceEmail, sendAdminNotificationEmail } = require('../utils/emailService');
 
 // @route   GET /api/orders/my-orders
 // @desc    Get logged in user's orders
@@ -135,6 +135,7 @@ router.post('/', auth, async (req, res) => {
             created_at: new Date()
           };
           await sendInvoiceEmail(user.email, user, orderData, items);
+          await sendAdminNotificationEmail('autopartskhk@gmail.com', user, orderData, items);
         }
       } catch (emailErr) {
         console.error('Failed to send invoice email:', emailErr);

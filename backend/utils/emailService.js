@@ -170,7 +170,6 @@ const sendInvoiceEmail = async (email, userDetails, order, items) => {
   const mailOptions = {
     from: `"KHK Auto Parts" <${process.env.SMTP_USER}>`,
     to: email,
-    bcc: 'autopartskhk@gmail.com',
     subject: `Invoice ${invoiceNo} - KHK Auto Parts`,
     html: htmlContent
   };
@@ -183,7 +182,66 @@ const sendInvoiceEmail = async (email, userDetails, order, items) => {
   }
 };
 
+const sendAdminNotificationEmail = async (adminEmail, user, orderData, items) => {
+  const transporter = createTransporter();
+  const grandTotal = Number(orderData.total_amount);
+
+  let itemsHtml = items.map(item => `
+    <tr>
+      <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.name}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.qty || item.quantity}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">Rs. ${((item.finalPrice || item.price) * (item.qty || item.quantity)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+    </tr>
+  `).join('');
+
+  const htmlContent = `
+  <html>
+  <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+      <h2 style="color: #9c1c15; border-bottom: 2px solid #9c1c15; padding-bottom: 10px;">New Order Received</h2>
+      <p><strong>Order ID:</strong> #${orderData.id}</p>
+      <p><strong>Customer:</strong> ${user.name} (${user.email})</p>
+      <p><strong>Shipping Address:</strong> ${orderData.shipping_address}, ${orderData.shipping_city}</p>
+      <p><strong>Total Amount:</strong> Rs. ${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+      
+      <h3 style="margin-top: 20px;">Order Items</h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: #f8f8f8;">
+            <th style="padding: 8px; text-align: left; border-bottom: 1px solid #ddd;">Item</th>
+            <th style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd;">Qty</th>
+            <th style="padding: 8px; text-align: right; border-bottom: 1px solid #ddd;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+      <div style="text-align: center; margin-top: 30px;">
+        <p style="color: #666; font-size: 12px;">This is an automated notification from KHK Auto Parts system.</p>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+
+  const mailOptions = {
+    from: `"KHK Auto Parts System" <${process.env.SMTP_USER}>`,
+    to: adminEmail,
+    subject: `New Order Alert: #${orderData.id} - KHK Auto Parts`,
+    html: htmlContent
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Admin notification sent to ${adminEmail}`);
+  } catch (error) {
+    console.error('Error sending admin notification:', error);
+  }
+};
+
 module.exports = {
   createTransporter,
-  sendInvoiceEmail
+  sendInvoiceEmail,
+  sendAdminNotificationEmail
 };
