@@ -39,10 +39,10 @@ function ToastStack({ toasts, onDismiss }) {
     <>
       <div className="toast-stack toast-center">
         {centerToasts.map(t => (
-          <div key={t.id} className="toast-interactive glass-modal" style={{ textAlign: 'center', pointerEvents: 'auto', marginBottom: '20px', maxWidth: '320px', padding: '24px' }}>
+          <div key={t.id} className="toast-interactive glass-modal" style={{ textAlign: 'center', pointerEvents: 'auto', marginBottom: '20px', maxWidth: '600px', padding: '24px' }}>
             <h3 style={{ marginTop: 0, color: 'var(--red)', fontFamily: 'var(--font-ui)', fontWeight: '800', fontSize: '1.2rem' }}>{t.title}</h3>
             <p style={{ color: 'var(--white)', marginBottom: '20px', fontSize: '0.95rem', lineHeight: '1.5' }}>{t.msg}</p>
-            <button className="btn-primary" style={{ width: '100%', padding: '10px', fontSize: '0.9rem', borderRadius: '8px' }} onClick={() => onDismiss(t.id)}>OK</button>
+            <button className="btn-primary" style={{ padding: '10px 40px', fontSize: '0.95rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={() => onDismiss(t.id)}>OK</button>
           </div>
         ))}
       </div>
@@ -60,7 +60,7 @@ function ToastStack({ toasts, onDismiss }) {
 function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   if (!isOpen) return null;
   return (
-    <div className="cart-overlay" style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="glass-modal">
         <h3 style={{ marginTop: 0, color: 'var(--red)', fontFamily: 'var(--font-hero)' }}>{title}</h3>
         <p style={{ color: 'var(--text)', marginBottom: '24px' }}>{message}</p>

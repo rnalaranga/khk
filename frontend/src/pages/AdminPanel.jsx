@@ -24,6 +24,8 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const [orderDateFrom, setOrderDateFrom] = useState('');
   const [orderDateTo, setOrderDateTo] = useState('');
   const [orderPage, setOrderPage] = useState(1);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [orderItems, setOrderItems] = useState([]);
   const ORDERS_PER_PAGE = 5;
   
   const [form, setForm] = useState({ name: '', category: '', price: '', stock: '', description: '', vehicle_ids: [], image: null });
@@ -167,6 +169,40 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       body: JSON.stringify({ status: newStatus, tracking_number: newTracking })
     });
     fetchOrders();
+  };
+
+  const handleDeleteOrder = async (id) => {
+    const confirmed = await showConfirm("Delete Order", "Are you sure you want to delete this order and all its items? This action cannot be undone.");
+    if (!confirmed) return;
+    try {
+      const res = await fetch(`/api/orders/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
+      if (res.ok) {
+        addToast('Order deleted successfully', 'success');
+        fetchOrders();
+        if (expandedOrderId === id) setExpandedOrderId(null);
+      } else {
+        addToast('Error deleting order', 'error');
+      }
+    } catch (err) { addToast('Error deleting order', 'error'); }
+  };
+
+  const handleToggleItems = async (id) => {
+    if (expandedOrderId === id) {
+      setExpandedOrderId(null);
+      setOrderItems([]);
+    } else {
+      setExpandedOrderId(id);
+      setOrderItems([]);
+      try {
+        const res = await fetch(`/api/orders/${id}/items`, { headers: { 'x-auth-token': token } });
+        if (res.ok) {
+          const items = await res.json();
+          setOrderItems(items);
+        } else {
+          addToast('Error fetching order items', 'error');
+        }
+      } catch (err) { addToast('Error fetching items', 'error'); }
+    }
   };
 
   const handleBlockCustomer = async (id, currentStatus) => {
@@ -548,8 +584,38 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                               <label style={{ display: 'block', color: 'var(--text-2)', fontSize: '0.8rem', marginBottom: 4 }}>Tracking Number</label>
                               <input type="text" className="form-input" placeholder="e.g. TRK123456789" value={o.tracking_number || ''} onChange={(e) => { const val = e.target.value; setOrders(orders.map(order => order.id === o.id ? { ...order, tracking_number: val } : order)); }} onBlur={(e) => handleUpdateOrder(o.id, o.status, e.target.value)} />
                             </div>
+                            <div style={{ display: 'flex', gap: 10, marginTop: '8px' }}>
+                              <button className="btn-outline" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }} onClick={() => handleToggleItems(o.id)}>{expandedOrderId === o.id ? 'Hide Items' : 'View Items'}</button>
+                              <button className="btn-outline" style={{ flex: 1, padding: '8px', fontSize: '0.85rem', color: 'var(--red)', borderColor: 'var(--red)' }} onClick={() => handleDeleteOrder(o.id)}><Trash2 size={16} style={{ verticalAlign: 'middle', marginRight: 4 }}/>Delete</button>
+                            </div>
                           </div>
                         </div>
+
+                        {expandedOrderId === o.id && (
+                          <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                            <h4 style={{ color: 'var(--text)', marginBottom: 12, fontSize: '0.9rem', textTransform: 'uppercase' }}>Order Items</h4>
+                            {orderItems.length === 0 ? (
+                              <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Loading items...</p>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {orderItems.map(item => (
+                                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
+                                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                      <img src={item.image || '/placeholder.png'} alt={item.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />
+                                      <div>
+                                        <p style={{ color: 'var(--white)', margin: 0, fontSize: '0.9rem' }}>{item.name}</p>
+                                        <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.8rem' }}>Qty: {item.quantity}</p>
+                                      </div>
+                                    </div>
+                                    <div style={{ color: 'var(--white)', fontWeight: 'bold' }}>
+                                      Rs. {(Number(item.price) * item.quantity).toLocaleString()}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

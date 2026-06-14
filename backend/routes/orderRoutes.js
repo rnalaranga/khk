@@ -79,6 +79,40 @@ router.put('/:id', adminAuth, async (req, res) => {
   }
 });
 
+// @route   DELETE /api/orders/:id
+// @desc    Delete order (Admin only)
+// @access  Private Admin
+router.delete('/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.query('DELETE FROM order_items WHERE order_id = ?', [id]);
+    await db.query('DELETE FROM orders WHERE id = ?', [id]);
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/orders/:id/items
+// @desc    Get order items
+// @access  Private Admin
+router.get('/:id/items', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [items] = await db.query(`
+      SELECT oi.*, p.name, p.image_url as image 
+      FROM order_items oi 
+      LEFT JOIN products p ON oi.product_id = p.id 
+      WHERE oi.order_id = ?
+    `, [id]);
+    res.json(items);
+  } catch (error) {
+    console.error('Error fetching order items:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/orders
 // @desc    Create a new order
 // @access  Private
