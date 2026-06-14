@@ -526,7 +526,7 @@ img { display: block; }
 /* ═══════════════════════════════
    PRODUCT CARD
 ═══════════════════════════════ */
-.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; width: 100%; box-sizing: border-box; }
 
 .pcard {
   background: var(--glass-bg);
@@ -567,7 +567,7 @@ img { display: block; }
 .pcard-img-wrap img {
   height: 100%; width: 100%;
   object-fit: contain; transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  filter: none;
+  filter: none; margin: auto; display: block;
 }
 .pcard:hover .pcard-img-wrap img { transform: scale(1.15); }
 
@@ -1038,7 +1038,7 @@ option {
   .slider-controls { right: 16px; bottom: 16px; }
   
   /* Product grids */
-  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; box-sizing: border-box; justify-content: center; }
   .pcard-img-wrap { aspect-ratio: 1 / 1; width: 100%; padding: 16px; }
   .pcard-img-wrap img { max-height: none; height: 100%; width: 100%; object-fit: contain; }
   .pcard-body { padding: 12px; }
