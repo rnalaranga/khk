@@ -601,7 +601,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                                 {orderItems.map(item => (
                                   <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
                                     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                                      <img src={item.image || '/placeholder.png'} alt={item.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />
+                                      <img src={item.image ? `/api/uploads/${item.image}` : '/prod_oil.png'} alt={item.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />
                                       <div>
                                         <p style={{ color: 'var(--white)', margin: 0, fontSize: '0.9rem' }}>{item.name}</p>
                                         <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.8rem' }}>Qty: {item.quantity}</p>
