@@ -30,7 +30,7 @@ function ToastStack({ toasts }) {
 function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   if (!isOpen) return null;
   return (
-    <div className="cart-overlay" style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justify-content: 'center' }}>
+    <div className="cart-overlay" style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="glass-modal">
         <h3 style={{ marginTop: 0, color: 'var(--red)', fontFamily: 'var(--font-hero)' }}>{title}</h3>
         <p style={{ color: 'var(--text)', marginBottom: '24px' }}>{message}</p>
