@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, CreditCard, Truck, CheckCircle, Building2 } from 'lucide-react';
 
-export default function Checkout({ cartItems, onOrderSuccess, user }) {
+export default function Checkout({ cartItems, onOrderSuccess, user, addToast }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
@@ -69,9 +69,8 @@ export default function Checkout({ cartItems, onOrderSuccess, user }) {
       const data = await response.json();
       setDone(true);
       onOrderSuccess();
-    } catch (error) {
-      console.error(error);
-      alert('There was an issue processing your order. Please try again.');
+    } catch (err) {
+      addToast('There was an issue processing your order. Please try again.', 'error');
     }
   };
 

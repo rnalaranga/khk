@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Package, PackageOpen, Server, AlertCircle, Edit, Trash2, Activity, Users, Car } from 'lucide-react';
 
-export default function AdminPanel({ user }) {
+export default function AdminPanel({ user, addToast, showConfirm }) {
   const navigate = useNavigate();
   const [tab, setTab] = useState('dashboard');
   const [vehicles, setVehicles] = useState([]);
@@ -79,14 +79,14 @@ export default function AdminPanel({ user }) {
         body: formData
       });
       if (res.ok) {
-        alert(editingProductId ? 'Product updated!' : 'Product added!');
+        addToast(editingProductId ? 'Product updated!' : 'Product added!', 'success');
         setForm({ name: '', category: 'Engine Oil', price: '', stock: '', description: '', vehicle_ids: [], image: null });
         setEditingProductId(null);
         const fileInput = document.getElementById('product-image-upload');
         if (fileInput) fileInput.value = '';
         fetchProducts();
-      } else alert('Error saving product');
-    } catch (err) { alert('Network error'); }
+      } else addToast('Error saving product', 'error');
+    } catch (err) { addToast('Network error', 'error'); }
   };
 
   const handleEditProduct = (p) => {
@@ -104,9 +104,12 @@ export default function AdminPanel({ user }) {
   };
 
   const handleDeleteProduct = async (id) => {
-    if (!window.confirm("Delete this product?")) return;
-    await fetch(`/api/products/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
-    fetchProducts();
+    const confirmed = await showConfirm("Delete Product", "Are you sure you want to delete this product?");
+    if (!confirmed) return;
+    try {
+      await fetch(`/api/products/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
+      fetchProducts();
+    } catch (err) { addToast('Error deleting product', 'error'); }
   };
 
   const handleAddVehicle = async (e) => {
@@ -119,9 +122,12 @@ export default function AdminPanel({ user }) {
   };
 
   const handleDeleteVehicle = async (id) => {
-    if (!window.confirm("Delete this vehicle?")) return;
-    await fetch(`/api/vehicles/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
-    fetchVehicles();
+    const confirmed = await showConfirm("Delete Vehicle", "Are you sure you want to delete this vehicle?");
+    if (!confirmed) return;
+    try {
+      await fetch(`/api/vehicles/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
+      fetchVehicles();
+    } catch (err) { addToast('Error deleting vehicle', 'error'); }
   };
 
   const handleAddCategory = async (e) => {
@@ -140,14 +146,17 @@ export default function AdminPanel({ user }) {
       fetchCategories();
     } else {
       const data = await res.json();
-      alert(data.message || 'Error creating category');
+      addToast(data.message || 'Error creating category', 'error');
     }
   };
 
   const handleDeleteCategory = async (id) => {
-    if (!window.confirm("Delete this category?")) return;
-    await fetch(`/api/categories/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
-    fetchCategories();
+    const confirmed = await showConfirm("Delete Category", "Are you sure you want to delete this category?");
+    if (!confirmed) return;
+    try {
+      await fetch(`/api/categories/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
+      fetchCategories();
+    } catch (err) { addToast('Error deleting category', 'error'); }
   };
 
   const handleUpdateOrder = async (orderId, newStatus, newTracking) => {
@@ -160,15 +169,21 @@ export default function AdminPanel({ user }) {
   };
 
   const handleBlockCustomer = async (id, currentStatus) => {
-    if (!window.confirm(`Are you sure you want to ${currentStatus ? 'unblock' : 'block'} this user?`)) return;
-    await fetch(`/api/auth/users/${id}/block`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-auth-token': token }, body: JSON.stringify({ is_blocked: !currentStatus }) });
-    fetchCustomers();
+    const confirmed = await showConfirm("User Status", `Are you sure you want to ${currentStatus ? 'unblock' : 'block'} this user?`);
+    if (!confirmed) return;
+    try {
+      await fetch(`/api/auth/users/${id}/block`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-auth-token': token }, body: JSON.stringify({ is_blocked: !currentStatus }) });
+      fetchCustomers();
+    } catch (err) { addToast('Error updating user status', 'error'); }
   };
 
   const handleDeleteCustomer = async (id) => {
-    if (!window.confirm("Delete this user permanently?")) return;
-    await fetch(`/api/auth/users/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
-    fetchCustomers();
+    const confirmed = await showConfirm("Delete User", "Are you sure you want to delete this user permanently?");
+    if (!confirmed) return;
+    try {
+      await fetch(`/api/auth/users/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
+      fetchCustomers();
+    } catch (err) { addToast('Error deleting user', 'error'); }
   };
 
   const tokenLocal = localStorage.getItem('token');

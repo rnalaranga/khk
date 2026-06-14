@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Clock, CheckCircle } from 'lucide-react';
 
-export default function Account({ user, setUser }) {
+export default function Account({ user, setUser, addToast }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showProfileForm, setShowProfileForm] = useState(false);
@@ -56,12 +56,12 @@ export default function Account({ user, setUser }) {
       if (res.ok) {
         setUser({ ...user, ...form });
         setShowProfileForm(false);
-        alert('Profile updated successfully!');
+        addToast('Profile updated successfully!', 'success');
       } else {
-        alert('Failed to update profile');
+        addToast('Failed to update profile', 'error');
       }
     } catch (err) {
-      alert('Error updating profile');
+      addToast('Error updating profile', 'error');
     }
   };
 

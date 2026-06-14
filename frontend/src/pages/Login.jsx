@@ -32,7 +32,7 @@ export default function Login({ onLogin, addToast }) {
 
       if (!isLogin && form.password !== form.confirmPassword) {
         if (addToast) addToast("Passwords don't match!", 'error');
-        else alert("Passwords don't match!");
+        else console.error("Passwords don't match!");
         return;
       }
 
@@ -60,7 +60,7 @@ export default function Login({ onLogin, addToast }) {
       }
     } catch (error) {
       if (addToast) addToast(error.message, 'error');
-      else alert(error.message);
+      else console.error(error.message);
     }
   };
 

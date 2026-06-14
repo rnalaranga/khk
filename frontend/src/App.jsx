@@ -27,6 +27,22 @@ function ToastStack({ toasts }) {
   );
 }
 
+function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
+  if (!isOpen) return null;
+  return (
+    <div className="cart-overlay" style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justify-content: 'center' }}>
+      <div className="glass-modal">
+        <h3 style={{ marginTop: 0, color: 'var(--red)', fontFamily: 'var(--font-hero)' }}>{title}</h3>
+        <p style={{ color: 'var(--text)', marginBottom: '24px' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <button className="btn-outline" onClick={onCancel}>Cancel</button>
+          <button className="btn-primary" onClick={onConfirm}>Confirm</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [products, setProducts]   = useState([]);
   const [categories, setCategories] = useState([]);
@@ -50,6 +66,26 @@ export default function App() {
   const [user, setUser]           = useState(null);
   const [bumpCart, setBumpCart]   = useState(false);
   const toastId = useRef(0);
+
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, onCancel: null });
+
+  const showConfirm = useCallback((title, message) => {
+    return new Promise((resolve) => {
+      setConfirmState({
+        isOpen: true,
+        title,
+        message,
+        onConfirm: () => {
+          setConfirmState(prev => ({ ...prev, isOpen: false }));
+          resolve(true);
+        },
+        onCancel: () => {
+          setConfirmState(prev => ({ ...prev, isOpen: false }));
+          resolve(false);
+        }
+      });
+    });
+  }, []);
 
   // Check auth on load
   useEffect(() => {
@@ -172,10 +208,10 @@ export default function App() {
             <Route path="/"        element={<Home products={products} categories={categories} onAddToCart={addToCart} />} />
             <Route path="/shop"    element={<Shop products={products} categories={categories} onAddToCart={addToCart} />} />
             <Route path="/cart"    element={<Cart cartItems={cartItems} onUpdateQty={updateQty} onRemove={removeFromCart} />} />
-            <Route path="/checkout" element={<Checkout cartItems={cartItems} user={user} onOrderSuccess={() => { setCartItems([]); addToast('Order placed!', 'success'); }} />} />
+            <Route path="/checkout" element={<Checkout cartItems={cartItems} user={user} onOrderSuccess={() => { setCartItems([]); addToast('Order placed!', 'success'); }} addToast={addToast} />} />
             <Route path="/login"   element={<Login onLogin={(u) => { setUser(u); addToast('Logged in successfully', 'success'); }} addToast={addToast} />} />
-            <Route path="/account" element={<Account user={user} setUser={setUser} />} />
-            <Route path="/admin"   element={<AdminPanel user={user} />} />
+            <Route path="/account" element={<Account user={user} setUser={setUser} addToast={addToast} />} />
+            <Route path="/admin"   element={<AdminPanel user={user} addToast={addToast} showConfirm={showConfirm} />} />
           </Routes>
         </main>
 
@@ -186,6 +222,7 @@ export default function App() {
         </a>
         <MobileBottomNav user={user} cartCount={cartCount} />
         <ToastStack toasts={toasts} />
+        <ConfirmDialog {...confirmState} />
       </div>
     </BrowserRouter>
   );
