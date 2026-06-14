@@ -1248,15 +1248,15 @@ option {
 
 /* Glass Modal for Custom Confirms */
 .glass-modal {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  background: var(--smoke-bg);
+  backdrop-filter: blur(var(--smoke-blur));
+  -webkit-backdrop-filter: blur(var(--smoke-blur));
   border: 1px solid var(--glass-border);
   padding: 24px;
   border-radius: 16px;
   width: 90%;
   max-width: 400px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 @keyframes modalPop {

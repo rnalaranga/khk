@@ -39,10 +39,10 @@ function ToastStack({ toasts, onDismiss }) {
     <>
       <div className="toast-stack toast-center">
         {centerToasts.map(t => (
-          <div key={t.id} className="toast-interactive glass-modal" style={{ textAlign: 'center', pointerEvents: 'auto', marginBottom: '20px' }}>
-            <h3 style={{ marginTop: 0, color: 'var(--red)', fontFamily: 'var(--font-hero)', textTransform: 'uppercase', fontSize: '1.4rem' }}>{t.title}</h3>
-            <p style={{ color: 'var(--text-main)', marginBottom: '24px', fontSize: '1.1rem' }}>{t.msg}</p>
-            <button className="btn-primary" style={{ width: '100%', padding: '12px' }} onClick={() => onDismiss(t.id)}>OK</button>
+          <div key={t.id} className="toast-interactive glass-modal" style={{ textAlign: 'center', pointerEvents: 'auto', marginBottom: '20px', maxWidth: '320px', padding: '24px' }}>
+            <h3 style={{ marginTop: 0, color: 'var(--red)', fontFamily: 'var(--font-ui)', fontWeight: '800', fontSize: '1.2rem' }}>{t.title}</h3>
+            <p style={{ color: 'var(--white)', marginBottom: '20px', fontSize: '0.95rem', lineHeight: '1.5' }}>{t.msg}</p>
+            <button className="btn-primary" style={{ width: '100%', padding: '10px', fontSize: '0.9rem', borderRadius: '8px' }} onClick={() => onDismiss(t.id)}>OK</button>
           </div>
         ))}
       </div>
