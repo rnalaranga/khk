@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Filter, X } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 
@@ -8,13 +8,32 @@ export default function Shop({ products, categories = [], onAddToCart }) {
   const cat = searchParams.get('category') || '';
   const [currentPage, setCurrentPage] = useState(1);
   const [isCatOpen, setIsCatOpen] = useState(false);
+  const location = useLocation();
 
-  // Reset page when category changes
+  useEffect(() => {
+    if (location.state?.openCategories) {
+      setIsCatOpen(true);
+      // Clean up the state so it doesn't trigger on reload/back
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  // Reset page when category or search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [cat]);
+  }, [searchParams]);
 
-  const filtered = cat ? products.filter(p => p.category === cat) : products;
+  const searchQ = searchParams.get('search') || '';
+  
+  const filtered = products.filter(p => {
+    const matchCat = cat ? p.category === cat : true;
+    const matchSearch = searchQ 
+      ? (p.name?.toLowerCase().includes(searchQ.toLowerCase()) || 
+         p.description?.toLowerCase().includes(searchQ.toLowerCase()) ||
+         p.brand?.toLowerCase().includes(searchQ.toLowerCase()))
+      : true;
+    return matchCat && matchSearch;
+  });
   
   const ITEMS_PER_PAGE = 12;
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
@@ -77,9 +96,11 @@ export default function Shop({ products, categories = [], onAddToCart }) {
             </div>
 
             {filtered.length === 0 ? (
-              <div style={{ padding:'80px 0', textAlign:'center', color:'var(--muted)' }}>
-                <p style={{ fontSize:'1.2rem', marginBottom:16 }}>No products found.</p>
-                <button onClick={() => setSearchParams({})} className="btn-primary">View All Parts</button>
+              <div style={{ textAlign:'center', padding:'60px 20px', gridColumn:'1/-1', color:'var(--muted)' }}>
+                <div style={{ fontSize:'3rem', marginBottom:16 }}>🔍</div>
+                <h3 style={{ color:'var(--text)', fontSize:'1.2rem', marginBottom:8 }}>No products found</h3>
+                <p>Try adjusting your search "{searchQ}" or category filters.</p>
+                <button onClick={() => setSearchParams({})} className="btn-primary" style={{ marginTop: 16 }}>View All Parts</button>
               </div>
             ) : (
               <>

@@ -10,6 +10,7 @@ import Checkout from './pages/Checkout';
 import Login from './pages/Login';
 import Account from './pages/Account';
 import AdminPanel from './pages/AdminPanel';
+import MobileBottomNav from './components/MobileBottomNav';
 import { MessageCircle } from 'lucide-react';
 
 // Products are now fetched from backend
@@ -96,7 +97,7 @@ export default function App() {
     localStorage.setItem('khk_theme', theme);
     
     // Update mobile browser notification/status bar color
-    const color = theme === 'dark' ? '#080808' : '#F0F2F5';
+    const color = theme === 'dark' ? '#080808' : '#B80000'; // Dark Red for light theme
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
       metaThemeColor.setAttribute('content', color);
@@ -179,10 +180,11 @@ export default function App() {
         </main>
 
         <Footer />
-        <a href="https://wa.me/94701234567" target="_blank" rel="noreferrer" className="floating-whatsapp">
+        <a href="https://wa.me/94719010751" target="_blank" rel="noreferrer" className="floating-whatsapp">
           <MessageCircle size={28} />
           <div className="floating-whatsapp-tooltip">Chat with us!</div>
         </a>
+        <MobileBottomNav user={user} cartCount={cartCount} />
         <ToastStack toasts={toasts} />
       </div>
     </BrowserRouter>

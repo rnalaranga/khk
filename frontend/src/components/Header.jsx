@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, User, ShoppingCart, Phone, Mail, Sun, Moon, Droplets, Disc, SlidersHorizontal, FlaskConical, PackageOpen, Layers, LogOut, Shield } from 'lucide-react';
 
 export default function Header({ cartCount, theme, toggleTheme, user, onLogout, bumpCart }) {
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
     window.addEventListener('scroll', fn);
@@ -16,7 +25,7 @@ export default function Header({ cartCount, theme, toggleTheme, user, onLogout, 
       <div className="header-topbar">
         <div className="container">
           <div className="topbar-left">
-            <span style={{ display:'flex', alignItems:'center', gap:6 }}><Phone size={12}/> 011 234 5678</span>
+            <span style={{ display:'flex', alignItems:'center', gap:6 }}><Phone size={12}/> 071 901 0751</span>
             <span style={{ display:'flex', alignItems:'center', gap:6 }}><Mail size={12}/> info@khkautoparts.lk</span>
             <span style={{ display:'flex', alignItems:'center', gap:6 }}>Free delivery on orders over Rs. 5,000</span>
           </div>
@@ -34,20 +43,30 @@ export default function Header({ cartCount, theme, toggleTheme, user, onLogout, 
             <img src="/logo.png" alt="KHK Logo" style={{ height: '40px', width: 'auto' }} />
           </Link>
 
-          <div className="header-search">
-            <input type="text" placeholder="Search parts, models, brands..." />
-            <button><Search size={20} /></button>
-          </div>
+          <form className="header-search" onSubmit={handleSearchSubmit}>
+            <input 
+              type="text" 
+              placeholder="Search parts, models, descriptions..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button type="submit"><Search size={20} /></button>
+          </form>
 
           <div className="header-icons">
             {/* ── Theme Toggle ── */}
-            <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
-              {theme === 'dark' ? <Sun size={15}/> : <Moon size={15}/>}
-              <div className="theme-toggle-track">
-                <div className="theme-toggle-knob"></div>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <div className="theme-tooltip">
+                <span style={{ marginRight: 4 }}>✨</span> Try {theme === 'dark' ? 'Light' : 'Dark'} Mode
               </div>
-              {theme === 'dark' ? 'Light' : 'Dark'}
-            </button>
+              <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+                {theme === 'dark' ? <Sun size={15}/> : <Moon size={15}/>}
+                <div className="theme-toggle-track">
+                  <div className="theme-toggle-knob"></div>
+                </div>
+                <span className="icon-label">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+              </button>
+            </div>
 
             {user ? (
               <>
