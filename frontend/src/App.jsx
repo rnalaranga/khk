@@ -32,15 +32,17 @@ const playToastSound = () => {
   } catch(e) {}
 };
 
-function ToastStack({ toasts }) {
+function ToastStack({ toasts, onDismiss }) {
   const centerToasts = toasts.filter(t => t.pos !== 'top-right');
   const topToasts = toasts.filter(t => t.pos === 'top-right');
   return (
     <>
       <div className="toast-stack toast-center">
         {centerToasts.map(t => (
-          <div key={t.id} className={`toast${t.type === 'success' ? ' toast-success' : ''}`}>
-            {t.msg}
+          <div key={t.id} className="toast-interactive glass-modal" style={{ textAlign: 'center', pointerEvents: 'auto', marginBottom: '20px' }}>
+            <h3 style={{ marginTop: 0, color: 'var(--red)', fontFamily: 'var(--font-hero)', textTransform: 'uppercase', fontSize: '1.4rem' }}>{t.title}</h3>
+            <p style={{ color: 'var(--text-main)', marginBottom: '24px', fontSize: '1.1rem' }}>{t.msg}</p>
+            <button className="btn-primary" style={{ width: '100%', padding: '12px' }} onClick={() => onDismiss(t.id)}>OK</button>
           </div>
         ))}
       </div>
@@ -180,12 +182,25 @@ export default function App() {
 
   const toggleTheme = useCallback(() => {setTheme(t => t === 'dark' ? 'light' : 'dark')}, []);
 
-  const addToast = useCallback((msg, type = 'info', pos = 'center') => {
-    const id = ++toastId.current;
-    setToasts(p => [...p, { id, msg, type, pos }]);
-    playToastSound();
-    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500);
+  const removeToast = useCallback((id) => {
+    setToasts(p => p.filter(t => t.id !== id));
   }, []);
+
+  const addToast = useCallback((msg, type = 'info', pos = 'center', title = '') => {
+    const id = ++toastId.current;
+    let finalTitle = title;
+    if (!finalTitle && pos === 'center') {
+      finalTitle = type === 'success' ? 'Success' : type === 'error' ? 'Error' : 'Notice';
+    }
+    setToasts(p => [...p, { id, msg, type, pos, title: finalTitle }]);
+    playToastSound();
+    
+    if (pos === 'top-right') {
+      setTimeout(() => removeToast(id), 3500);
+    } else {
+      setTimeout(() => removeToast(id), 8000);
+    }
+  }, [removeToast]);
 
   const addToCart = useCallback((product) => {
     const existing = cartItems.find(i => i.id === product.id);
@@ -250,7 +265,7 @@ export default function App() {
           <div className="floating-whatsapp-tooltip">Chat with us!</div>
         </a>
         <MobileBottomNav user={user} cartCount={cartCount} />
-        <ToastStack toasts={toasts} />
+        <ToastStack toasts={toasts} onDismiss={removeToast} />
         <ConfirmDialog {...confirmState} />
       </div>
     </BrowserRouter>
