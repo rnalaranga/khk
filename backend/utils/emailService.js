@@ -34,10 +34,16 @@ const sendInvoiceEmail = async (email, userDetails, order, items) => {
   const itemsHtml = items.map(item => {
     const itemQty = item.qty || item.quantity;
     const itemPrice = item.finalPrice || item.price;
+    const originalPrice = item.original_price || item.price;
     return `
     <tr>
-      <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; color: #333; font-size: 14px;">${item.name}</td>
-      <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; text-align: right; color: #333; font-size: 14px;">${Number(itemPrice).toLocaleString()}</td>
+      <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; color: #333; font-size: 14px;">
+        ${item.name} ${item.discount_percent > 0 ? `<br><span style="color: #e4000f; font-size: 12px;">(-${item.discount_percent}% OFF)</span>` : ''}
+      </td>
+      <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; text-align: right; color: #333; font-size: 14px;">
+        ${item.discount_percent > 0 ? `<span style="text-decoration: line-through; color: #999; font-size: 12px;">${Number(originalPrice).toLocaleString()}</span><br>` : ''}
+        ${Number(itemPrice).toLocaleString()}
+      </td>
       <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; text-align: center; color: #333; font-size: 14px;">${itemQty}</td>
       <td style="padding: 12px 8px; border-bottom: 1px solid #ddd; text-align: right; color: #333; font-size: 14px;">${(itemPrice * itemQty).toLocaleString()}</td>
     </tr>
@@ -201,7 +207,9 @@ const sendAdminNotificationEmail = async (adminEmail, user, orderData, items) =>
 
   let itemsHtml = items.map(item => `
     <tr>
-      <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.name}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+        ${item.name} ${item.discount_percent > 0 ? `<br><span style="color: #e4000f; font-size: 11px;">(-${item.discount_percent}% OFF)</span>` : ''}
+      </td>
       <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.qty || item.quantity}</td>
       <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">Rs. ${((item.finalPrice || item.price) * (item.qty || item.quantity)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
     </tr>
