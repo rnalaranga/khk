@@ -185,14 +185,92 @@ router.post('/verify-code', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+// @route   POST /api/auth/forgot-password
+// @desc    Send password reset link
+// @access  Public
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
 
+    const [users] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (users.length === 0) return res.status(400).json({ message: 'No account with that email found' });
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = await bcrypt.hash(resetToken, 10);
+    const expiry = new Date(Date.now() + 3600000); // 1 hour
+
+    await db.query(
+      'UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?',
+      [resetTokenHash, expiry, users[0].id]
+    );
+
+    let transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+    });
+
+    const resetLink = `${req.headers.origin || 'http://localhost:5173'}/reset-password?token=${resetToken}&id=${users[0].id}`;
+
+    await transporter.sendMail({
+      from: `"KHK Auto Parts" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: 'Password Reset - KHK Auto Parts',
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>You requested a password reset. Click the button below to set a new password. This link is valid for 1 hour.</p>
+        <a href="${resetLink}" style="padding:10px 20px;background:#E4000F;color:white;text-decoration:none;border-radius:5px;display:inline-block;margin-top:10px;">Reset Password</a>
+        <p style="margin-top:20px;">If you did not request this, please ignore this email.</p>
+      `
+    });
+
+    res.json({ message: 'Password reset link sent to your email' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password using token
+// @access  Public
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { id, token, newPassword } = req.body;
+    if (!id || !token || !newPassword) return res.status(400).json({ message: 'Missing fields' });
+
+    const [users] = await db.query('SELECT reset_token, reset_token_expiry FROM users WHERE id = ?', [id]);
+    if (users.length === 0 || !users[0].reset_token) return res.status(400).json({ message: 'Invalid or expired reset token' });
+
+    if (new Date() > new Date(users[0].reset_token_expiry)) {
+      return res.status(400).json({ message: 'Reset token has expired' });
+    }
+
+    const isValid = await bcrypt.compare(token, users[0].reset_token);
+    if (!isValid) return res.status(400).json({ message: 'Invalid reset token' });
+
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(newPassword, salt);
+
+    await db.query(
+      'UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?',
+      [hash, id]
+    );
+
+    res.json({ message: 'Password has been successfully reset' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 // @route   GET /api/auth/users
-// @desc    Get all customers
+// @desc    Get all users except self
 // @access  Private Admin
 router.get('/users', adminAuth, async (req, res) => {
   try {
     const [users] = await db.query(
-      'SELECT id, name, email, phone, address, city, created_at, is_verified, is_blocked FROM users WHERE role = "customer" ORDER BY created_at DESC'
+      'SELECT id, name, email, phone, address, city, created_at, is_verified, is_blocked, role FROM users WHERE id != ? ORDER BY created_at DESC',
+      [req.user.id]
     );
     res.json(users);
   } catch (error) {
@@ -224,6 +302,21 @@ router.delete('/users/:id', adminAuth, async (req, res) => {
     res.json({ message: 'User deleted' });
   } catch (error) {
     console.error('Error deleting user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/auth/users/:id/role
+// @desc    Change user role
+// @access  Private Admin
+router.put('/users/:id/role', adminAuth, async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (role !== 'admin' && role !== 'customer') return res.status(400).json({ message: 'Invalid role' });
+    await db.query('UPDATE users SET role = ? WHERE id = ?', [role, req.params.id]);
+    res.json({ message: `User role updated to ${role}` });
+  } catch (error) {
+    console.error('Error changing role:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -8,6 +8,7 @@ import Shop from './pages/Shop';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 import Account from './pages/Account';
 import AdminPanel from './pages/AdminPanel';
 import MobileBottomNav from './components/MobileBottomNav';
@@ -254,6 +255,7 @@ export default function App() {
             <Route path="/cart"    element={<Cart cartItems={cartItems} onUpdateQty={updateQty} onRemove={removeFromCart} />} />
             <Route path="/checkout" element={<Checkout cartItems={cartItems} user={user} onOrderSuccess={() => { setCartItems([]); addToast('Order placed!', 'success'); }} addToast={addToast} />} />
             <Route path="/login"   element={<Login onLogin={(u) => { setUser(u); addToast('Logged in successfully', 'success'); }} addToast={addToast} />} />
+            <Route path="/reset-password" element={<ResetPassword addToast={addToast} />} />
             <Route path="/account" element={<Account user={user} setUser={setUser} addToast={addToast} />} />
             <Route path="/admin"   element={<AdminPanel user={user} addToast={addToast} showConfirm={showConfirm} />} />
           </Routes>

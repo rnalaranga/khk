@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-react';
 export default function Login({ onLogin, addToast }) {
   const [isLogin, setIsLogin] = useState(true);
   const [verifyMode, setVerifyMode] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', code: '' });
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -64,6 +65,23 @@ export default function Login({ onLogin, addToast }) {
     }
   };
 
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error sending link');
+      if (addToast) addToast(data.message, 'success');
+      setForgotMode(false);
+    } catch (err) {
+      if (addToast) addToast(err.message, 'error');
+    }
+  };
+
   return (
     <section className="auth-page">
       <div className="auth-card">
@@ -71,12 +89,24 @@ export default function Login({ onLogin, addToast }) {
           <img src="/logo.png" alt="KHK Logo" style={{ height: '48px', width: 'auto', marginBottom: '8px' }} />
         </div>
         <h1 className="auth-title">
-          {verifyMode ? 'Verify Email' : isLogin ? 'Sign In' : 'Create Account'}
+          {forgotMode ? 'Reset Password' : verifyMode ? 'Verify Email' : isLogin ? 'Sign In' : 'Create Account'}
         </h1>
         <p className="auth-subtitle">
-          {verifyMode ? 'Enter the 6-digit code sent to your email.' : isLogin ? 'Welcome back to KHK Auto Parts' : 'Join us for premium auto parts'}
+          {forgotMode ? 'Enter your email to receive a reset link.' : verifyMode ? 'Enter the 6-digit code sent to your email.' : isLogin ? 'Welcome back to KHK Auto Parts' : 'Join us for premium auto parts'}
         </p>
 
+        {forgotMode ? (
+          <form onSubmit={handleForgotSubmit}>
+            <div className="form-group">
+              <label className="form-label">Email Address</label>
+              <input required type="email" className="form-input" placeholder="name@example.com" value={form.email} onChange={e => update('email', e.target.value)} />
+            </div>
+            <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+              Send Reset Link <ArrowRight size={20} />
+            </button>
+            <button type="button" onClick={() => setForgotMode(false)} style={{ width: '100%', marginTop: '1rem', background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>Back to Login</button>
+          </form>
+        ) : (
         <form onSubmit={handleSubmit}>
           {verifyMode ? (
             <div className="form-group">
@@ -96,8 +126,11 @@ export default function Login({ onLogin, addToast }) {
                 <input required type="email" className="form-input" placeholder="name@example.com" value={form.email} onChange={e => update('email', e.target.value)} />
               </div>
               <div className="form-group">
-                <label className="form-label">Password</label>
-                <input required type="password" className="form-input" placeholder="••••••••" value={form.password} onChange={e => update('password', e.target.value)} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
+                  {isLogin && <button type="button" onClick={() => setForgotMode(true)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', fontSize: '0.8rem', cursor: 'pointer', padding: 0 }}>Forgot Password?</button>}
+                </div>
+                <input required type="password" className="form-input" placeholder="••••••••" style={{ marginTop: 8 }} value={form.password} onChange={e => update('password', e.target.value)} />
               </div>
               {!isLogin && (
                 <div className="form-group">
@@ -113,8 +146,9 @@ export default function Login({ onLogin, addToast }) {
             <ArrowRight size={20} />
           </button>
         </form>
+        )}
 
-        {!verifyMode && (
+        {!verifyMode && !forgotMode && (
           <div style={{ marginTop: 24, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <hr style={{ flex: 1, borderColor: 'var(--border)', borderTop: 'none', margin: 0 }} />

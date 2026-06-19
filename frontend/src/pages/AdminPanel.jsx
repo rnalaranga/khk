@@ -223,6 +223,16 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
     } catch (err) { addToast('Error deleting user', 'error'); }
   };
 
+  const handleChangeRole = async (id, currentRole) => {
+    const newRole = currentRole === 'admin' ? 'customer' : 'admin';
+    const confirmed = await showConfirm("Change Role", `Are you sure you want to make this user ${newRole === 'admin' ? 'an Admin' : 'a Customer'}?`);
+    if (!confirmed) return;
+    try {
+      await fetch(`/api/auth/users/${id}/role`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-auth-token': token }, body: JSON.stringify({ role: newRole }) });
+      fetchCustomers();
+    } catch (err) { addToast('Error updating role', 'error'); }
+  };
+
   const tokenLocal = localStorage.getItem('token');
   if (!user && tokenLocal) return <div style={{ color: 'white', padding: 50, textAlign: 'center' }}>Loading Admin Panel...</div>;
   if (!user || user.role !== 'admin') return null;
@@ -319,6 +329,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                       <td style={{ padding: 12 }}><span style={{ color: c.is_blocked ? 'var(--red)' : '#4ade80' }}>{c.is_blocked ? 'Blocked' : 'Active'}</span></td>
                       <td style={{ padding: 12, display: 'flex', gap: 8 }}>
                         <button onClick={() => { setOrderSearch(c.email); setTab('orders'); setOrderPage(1); }} style={{ background: 'transparent', border: '1px solid #3b82f6', color: '#3b82f6', padding: '4px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' }}>Orders</button>
+                        <button onClick={() => handleChangeRole(c.id, c.role)} style={{ background: 'transparent', border: '1px solid #eab308', color: '#eab308', padding: '4px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' }}>{c.role === 'admin' ? 'Remove Admin' : 'Make Admin'}</button>
                         <button onClick={() => handleBlockCustomer(c.id, c.is_blocked)} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--white)', padding: '4px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' }}>{c.is_blocked ? 'Unblock' : 'Block'}</button>
                         <button onClick={() => handleDeleteCustomer(c.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button>
                       </td>
