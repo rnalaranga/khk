@@ -31,6 +31,8 @@ export default function Checkout({ cartItems, onOrderSuccess, user, addToast }) 
   }, [user]);
 
   const subtotal = cartItems.reduce((s, i) => s + i.finalPrice * i.qty, 0);
+  const totalOriginal = cartItems.reduce((sum, i) => sum + (i.original_price || i.finalPrice) * i.qty, 0);
+  const totalDiscount = totalOriginal - subtotal;
   const shipping = subtotal >= 5000 ? 0 : 500;
   const total = subtotal + shipping;
 
@@ -55,6 +57,7 @@ export default function Checkout({ cartItems, onOrderSuccess, user, addToast }) 
         body: JSON.stringify({
           items: cartItems,
           total_amount: total,
+          total_discount: totalDiscount,
           payment_method: form.payment,
           address: form.address,
           city: form.city,
@@ -241,6 +244,8 @@ export default function Checkout({ cartItems, onOrderSuccess, user, addToast }) 
               </div>
             ))}
             <div style={{ height:1, background:'var(--border)', margin:'16px 0' }}/>
+            <div className="summary-row"><span>Items Total</span><strong>Rs. {totalOriginal.toLocaleString()}</strong></div>
+            {totalDiscount > 0 && <div className="summary-row" style={{ color: '#4ade80' }}><span>Discount</span><strong>- Rs. {totalDiscount.toLocaleString()}</strong></div>}
             <div className="summary-row"><span>Subtotal</span><strong>Rs. {subtotal.toLocaleString()}</strong></div>
             <div className="summary-row"><span>Shipping</span><strong>{shipping === 0 ? 'FREE' : `Rs. ${shipping}`}</strong></div>
             <div className="summary-total-row">

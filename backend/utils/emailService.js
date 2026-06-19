@@ -22,6 +22,8 @@ const sendInvoiceEmail = async (email, userDetails, order, items) => {
 
   // Calculate totals matching the screenshot
   const itemSubTotal = items.reduce((acc, item) => acc + (item.finalPrice || item.price) * (item.qty || item.quantity), 0);
+  const totalDiscount = order.total_discount || 0;
+  const itemOriginalTotal = itemSubTotal + totalDiscount;
   const grandTotal = order.total_amount;
   const shipping = grandTotal - itemSubTotal;
 
@@ -131,6 +133,15 @@ const sendInvoiceEmail = async (email, userDetails, order, items) => {
           <!-- Totals Table -->
           <table width="100%" style="border-collapse: collapse; margin-bottom: 30px;">
             <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #333; font-size: 14px;">ITEMS TOTAL</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; color: #333; font-size: 14px;">${itemOriginalTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            </tr>
+            ${totalDiscount > 0 ? `
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #4ade80; font-size: 14px;">DISCOUNT</td>
+              <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; color: #4ade80; font-size: 14px;">-${totalDiscount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            </tr>` : ''}
+            <tr>
               <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #333; font-size: 14px;">SUB TOTAL</td>
               <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; color: #333; font-size: 14px;">${itemSubTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             </tr>
@@ -184,6 +195,8 @@ const sendAdminNotificationEmail = async (adminEmail, user, orderData, items) =>
   const transporter = createTransporter();
   const grandTotal = Number(orderData.total_amount);
   const itemSubTotal = items.reduce((acc, item) => acc + (item.finalPrice || item.price) * (item.qty || item.quantity), 0);
+  const totalDiscount = orderData.total_discount || 0;
+  const itemOriginalTotal = itemSubTotal + totalDiscount;
   const shipping = grandTotal - itemSubTotal;
 
   let itemsHtml = items.map(item => `
@@ -203,6 +216,8 @@ const sendAdminNotificationEmail = async (adminEmail, user, orderData, items) =>
       <p><strong>Customer:</strong> ${user.name} (${user.email})</p>
       <p><strong>Shipping Address:</strong> ${orderData.shipping_address}, ${orderData.shipping_city}</p>
       <div style="background-color: #fafafa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+        <p style="margin: 5px 0;"><strong>Items Total:</strong> Rs. ${itemOriginalTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+        ${totalDiscount > 0 ? `<p style="margin: 5px 0; color: #4ade80;"><strong>Discount:</strong> -Rs. ${totalDiscount.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>` : ''}
         <p style="margin: 5px 0;"><strong>Sub Total:</strong> Rs. ${itemSubTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
         <p style="margin: 5px 0;"><strong>Shipping:</strong> ${shipping === 0 ? 'FREE' : 'Rs. ' + shipping.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
         <p style="margin: 5px 0; font-size: 16px; color: #9c1c15;"><strong>Total Amount:</strong> Rs. ${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>

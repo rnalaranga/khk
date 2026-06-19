@@ -121,7 +121,7 @@ router.post('/', auth, async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    const { items, total_amount, payment_method, address, city, phone, shipping_address: sa, shipping_city: sc, shipping_phone: sp } = req.body;
+    const { items, total_amount, total_discount, payment_method, address, city, phone, shipping_address: sa, shipping_city: sc, shipping_phone: sp } = req.body;
     const shipping_address = address || sa;
     const shipping_city = city || sc;
     const shipping_phone = phone || sp;
@@ -133,16 +133,16 @@ router.post('/', auth, async (req, res) => {
 
     // 1. Create order
     const [orderResult] = await connection.query(
-      'INSERT INTO orders (user_id, total_amount, payment_method, status, shipping_address, shipping_city, shipping_phone) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [userId, total_amount, payment_method, 'Pending', shipping_address, shipping_city, shipping_phone]
+      'INSERT INTO orders (user_id, total_amount, total_discount, payment_method, status, shipping_address, shipping_city, shipping_phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [userId, total_amount, total_discount || 0, payment_method, 'Pending', shipping_address, shipping_city, shipping_phone]
     );
     const orderId = orderResult.insertId;
 
     // 2. Insert order items and deduct stock
     for (const item of items) {
       await connection.query(
-        'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
-        [orderId, item.id, item.qty, item.finalPrice || item.price]
+        'INSERT INTO order_items (order_id, product_id, quantity, price, original_price, discount_percent) VALUES (?, ?, ?, ?, ?, ?)',
+        [orderId, item.id, item.qty, item.finalPrice || item.price, item.original_price || item.price, item.discount_percent || 0]
       );
 
       // Deduct stock
@@ -164,6 +164,7 @@ router.post('/', auth, async (req, res) => {
           const orderData = {
             id: orderId,
             total_amount,
+            total_discount: total_discount || 0,
             shipping_address,
             shipping_city,
             created_at: new Date()

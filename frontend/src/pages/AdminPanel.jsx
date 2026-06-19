@@ -599,7 +599,8 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                           </div>
                           <div style={{ textAlign: 'right' }}>
                             <p style={{ color: 'var(--text)', fontWeight: 'bold', margin: 0, fontSize: '1.2rem' }}>Rs. {Number(o.total_amount).toLocaleString()}</p>
-                            <p style={{ color: 'var(--text-2)', margin: 0, fontSize: '0.9rem', textTransform: 'uppercase' }}>{o.payment_method === 'cod' ? 'Cash on Delivery' : o.payment_method === 'bank' ? 'Bank Transfer' : 'Card'}</p>
+                            {o.total_discount > 0 && <p style={{ color: '#4ade80', margin: '4px 0 0 0', fontSize: '0.85rem' }}>Discount: -Rs. {Number(o.total_discount).toLocaleString()}</p>}
+                            <p style={{ color: 'var(--text-2)', margin: '4px 0 0 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>{o.payment_method === 'cod' ? 'Cash on Delivery' : o.payment_method === 'bank' ? 'Bank Transfer' : 'Card'}</p>
                           </div>
                         </div>
                         
@@ -642,10 +643,12 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                                       <div>
                                         <p style={{ color: 'var(--white)', margin: 0, fontSize: '0.9rem' }}>{item.name}</p>
                                         <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.8rem' }}>Qty: {item.quantity}</p>
+                                        {item.discount_percent > 0 && <span style={{ background: 'var(--red)', color: 'white', padding: '2px 6px', borderRadius: 4, fontSize: '0.7rem', display: 'inline-block', marginTop: 4 }}>-{item.discount_percent}%</span>}
                                       </div>
                                     </div>
-                                    <div style={{ color: 'var(--white)', fontWeight: 'bold' }}>
-                                      Rs. {(Number(item.price) * item.quantity).toLocaleString()}
+                                    <div style={{ textAlign: 'right' }}>
+                                      {item.discount_percent > 0 && <div style={{ color: '#ff6b6b', textDecoration: 'line-through', fontSize: '0.8rem' }}>Rs. {(Number(item.original_price || item.price) * item.quantity).toLocaleString()}</div>}
+                                      <div style={{ color: 'var(--white)', fontWeight: 'bold' }}>Rs. {(Number(item.price) * item.quantity).toLocaleString()}</div>
                                     </div>
                                   </div>
                                 ))}

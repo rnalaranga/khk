@@ -4,6 +4,8 @@ import { Trash2, Plus, Minus, ArrowRight, ShoppingCart } from 'lucide-react';
 
 export default function Cart({ cartItems, onUpdateQty, onRemove }) {
   const subtotal = cartItems.reduce((sum, i) => sum + i.finalPrice * i.qty, 0);
+  const totalOriginal = cartItems.reduce((sum, i) => sum + (i.original_price || i.finalPrice) * i.qty, 0);
+  const totalDiscount = totalOriginal - subtotal;
   const shipping = subtotal >= 5000 ? 0 : 500;
   const total = subtotal + shipping;
 
@@ -43,15 +45,21 @@ export default function Cart({ cartItems, onUpdateQty, onRemove }) {
                 />
                 <div className="cart-info">
                   <div className="cart-cat">{item.category}</div>
-                  <div className="cart-name">{item.name}</div>
+                  <div className="cart-name" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {item.name}
+                    {item.discount_percent > 0 && <span className="badge-sale" style={{ padding: '2px 6px', fontSize: '0.6rem' }}>-{item.discount_percent}%</span>}
+                  </div>
                   <div className="cart-qty">
                     <button className="qty-btn" onClick={() => onUpdateQty(item.id, -1)}><Minus size={12}/></button>
                     <span className="qty-val">{item.qty}</span>
                     <button className="qty-btn" onClick={() => onUpdateQty(item.id, 1)}><Plus size={12}/></button>
                   </div>
                 </div>
-                <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:12 }}>
-                  <span className="cart-price">Rs. {(item.finalPrice * item.qty).toLocaleString()}</span>
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:8 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    {item.discount_percent > 0 && <span style={{ textDecoration: 'line-through', color: '#ff6b6b', fontSize: '0.9rem' }}>Rs. {(item.original_price * item.qty).toLocaleString()}</span>}
+                    <span className="cart-price">Rs. {(item.finalPrice * item.qty).toLocaleString()}</span>
+                  </div>
                   <button className="cart-remove" onClick={() => onRemove(item.id)}>
                     <Trash2 size={14} style={{ display:'inline', marginRight:4 }}/>
                     Remove
@@ -64,6 +72,16 @@ export default function Cart({ cartItems, onUpdateQty, onRemove }) {
           {/* Summary */}
           <div className="order-summary-block">
             <div className="summary-title">Order Summary</div>
+            <div className="summary-row">
+              <span>Items Total</span>
+              <strong>Rs. {totalOriginal.toLocaleString()}</strong>
+            </div>
+            {totalDiscount > 0 && (
+              <div className="summary-row" style={{ color: '#4ade80' }}>
+                <span>Discount</span>
+                <strong>- Rs. {totalDiscount.toLocaleString()}</strong>
+              </div>
+            )}
             <div className="summary-row">
               <span>Subtotal</span>
               <strong>Rs. {subtotal.toLocaleString()}</strong>

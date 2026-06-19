@@ -32,7 +32,7 @@ export default function ProductModal({ isOpen, onClose, product, onAddToCart, ve
 
   const handleAdd = () => {
     if (product.stock === 0 || added) return;
-    onAddToCart({ ...product, finalPrice });
+    onAddToCart({ ...product, finalPrice, original_price: product.price, discount_percent: bestDiscount });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   };
