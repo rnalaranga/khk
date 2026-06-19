@@ -83,7 +83,7 @@ export default function ProductModal({ isOpen, onClose, product, onAddToCart, ve
             <div style={{ marginTop: 'auto', paddingTop: 20, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {bestDiscount > 0 && (
-                  <span style={{ textDecoration: 'line-through', color: 'var(--muted)', fontSize: '0.9rem' }}>
+                  <span style={{ textDecoration: 'line-through', color: '#ff6b6b', fontSize: '1.1rem', fontWeight: '600', marginBottom: '-4px' }}>
                     Rs. {product.price.toLocaleString()}
                   </span>
                 )}

@@ -14,6 +14,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [editingProductId, setEditingProductId] = useState(null);
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [productSearch, setProductSearch] = useState('');
   const [productPage, setProductPage] = useState(1);
 
@@ -142,18 +143,37 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
     formData.append('discount_percent', cForm.discount_percent || 0);
     if (cForm.image) formData.append('image', cForm.image);
 
-    const res = await fetch('/api/categories', {
-      method: 'POST',
+    const method = editingCategoryId ? 'PUT' : 'POST';
+    const url = editingCategoryId ? `/api/categories/${editingCategoryId}` : `/api/categories`;
+
+    const res = await fetch(url, {
+      method,
       headers: { 'x-auth-token': token },
       body: formData
     });
     if (res.ok) {
+      addToast(editingCategoryId ? 'Category updated!' : 'Category added!', 'success');
       setCForm({ name: '', discount_percent: '', image: null });
+      setEditingCategoryId(null);
+      const fileInput = document.getElementById('category-image-upload');
+      if (fileInput) fileInput.value = '';
       fetchCategories();
     } else {
       const data = await res.json();
-      addToast(data.message || 'Error creating category', 'error');
+      addToast(data.message || 'Error saving category', 'error');
     }
+  };
+
+  const handleEditCategory = (c) => {
+    setEditingCategoryId(c.id);
+    setCForm({
+      name: c.name,
+      discount_percent: c.discount_percent || '',
+      image: null
+    });
+    const fileInput = document.getElementById('category-image-upload');
+    if (fileInput) fileInput.value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteCategory = async (id) => {
@@ -165,15 +185,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
     } catch (err) { addToast('Error deleting category', 'error'); }
   };
 
-  const handleEditCategoryDiscount = async (id, currentDiscount) => {
-    const newDiscount = prompt('Enter new discount percentage (0-100):', currentDiscount);
-    if (newDiscount === null) return;
-    try {
-      await fetch(`/api/categories/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-auth-token': token }, body: JSON.stringify({ discount_percent: parseInt(newDiscount) || 0 }) });
-      fetchCategories();
-      addToast('Category discount updated', 'success');
-    } catch (err) { addToast('Error updating category', 'error'); }
-  };
+
 
   const handleUpdateOrder = async (orderId, newStatus, newTracking) => {
     await fetch(`/api/orders/${orderId}`, {
@@ -664,7 +676,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
         {/* CATEGORIES TAB */}
         {tab === 'categories' && (
           <div>
-            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Category Management</h2>
+            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>{editingCategoryId ? 'Edit Category' : 'Category Management'}</h2>
             <form onSubmit={handleAddCategory} style={{ display: 'flex', gap: 16, marginBottom: 32, alignItems: 'flex-end', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 200px' }}>
                 <label className="form-label">Category Name</label>
@@ -676,9 +688,14 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
               </div>
               <div style={{ flex: '1 1 200px' }}>
                 <label className="form-label">Category Image (Optional)</label>
-                <input type="file" className="form-input" accept="image/*" onChange={e => setCForm({ ...cForm, image: e.target.files[0] })} style={{ padding: '8px 12px' }} />
+                <input id="category-image-upload" type="file" className="form-input" accept="image/*" onChange={e => setCForm({ ...cForm, image: e.target.files[0] })} style={{ padding: '8px 12px' }} />
               </div>
-              <button type="submit" className="btn-primary" style={{ padding: '12px 24px', flex: '0 0 auto' }}>Add Category</button>
+              <div style={{ display: 'flex', gap: 8, flex: '0 0 auto' }}>
+                <button type="submit" className="btn-primary" style={{ padding: '12px 24px' }}>{editingCategoryId ? 'Update Category' : 'Add Category'}</button>
+                {editingCategoryId && (
+                  <button type="button" className="btn-outline" onClick={() => { setEditingCategoryId(null); setCForm({ name: '', discount_percent: '', image: null }); }} style={{ padding: '12px 24px' }}>Cancel</button>
+                )}
+              </div>
             </form>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
@@ -693,8 +710,11 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                           <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</div>
                         )}
                       </td>
-                      <td style={{ padding: 12 }}>{c.name} {c.discount_percent > 0 && <span style={{ color: '#eab308', marginLeft: 8, fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => handleEditCategoryDiscount(c.id, c.discount_percent)}>({c.discount_percent}% OFF ✎)</span>} {(!c.discount_percent || c.discount_percent === 0) && <span style={{ color: 'var(--muted)', marginLeft: 8, fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => handleEditCategoryDiscount(c.id, 0)}>(Add Discount)</span>}</td>
-                      <td style={{ padding: 12 }}><button onClick={() => handleDeleteCategory(c.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button></td>
+                      <td style={{ padding: 12 }}>{c.name} {c.discount_percent > 0 && <span style={{ color: '#eab308', marginLeft: 8, fontSize: '0.8rem' }}>({c.discount_percent}% OFF)</span>}</td>
+                      <td style={{ padding: 12, display: 'flex', gap: 8 }}>
+                        <button onClick={() => handleEditCategory(c)} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer' }}><Edit size={18} /></button>
+                        <button onClick={() => handleDeleteCategory(c.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button>
+                      </td>
                     </tr>
                   ))}
                   {categories.length === 0 && <tr><td colSpan="3" style={{ padding: 20, textAlign: 'center', color: 'var(--muted)' }}>No categories found</td></tr>}

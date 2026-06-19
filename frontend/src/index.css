@@ -577,9 +577,23 @@ img { display: block; }
 }
 .badge-sale {
   background: var(--red); color: white;
-  font-family: var(--font-hero); font-size: 0.7rem; font-weight: 800;
+  font-family: var(--font-hero); font-size: 0.75rem; font-weight: 800;
   letter-spacing: 0.05em; text-transform: uppercase;
-  padding: 3px 10px;
+  padding: 4px 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.badge-sale::before {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  background-color: #fff;
+  border-radius: 50%;
+  animation: blink-dot 1s infinite alternate;
+}
+@keyframes blink-dot {
+  0% { opacity: 0.4; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 5px rgba(255,255,255,0.8); }
 }
 .badge-compat {
   background: rgba(34, 197, 94, 0.15); color: #22C55E;
@@ -607,7 +621,7 @@ img { display: block; }
   gap: 12px;
 }
 .price-wrap { display: flex; flex-direction: column; }
-.price-orig { font-size: 0.8rem; color: var(--muted); text-decoration: line-through; }
+.price-orig { font-size: 1rem; color: #ff6b6b; text-decoration: line-through; font-weight: 600; margin-bottom: -4px; }
 .price-final { font-family: var(--font-hero); font-size: 1.4rem; font-weight: 800; color: var(--white); }
 
 .pcard-add-btn {

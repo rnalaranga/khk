@@ -75,15 +75,36 @@ router.delete('/:id', adminAuth, async (req, res) => {
 // @route   PUT /api/categories/:id
 // @desc    Update a category (Admin only)
 // @access  Private Admin
-router.put('/:id', adminAuth, async (req, res) => {
+router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { discount_percent } = req.body;
+    const { name, discount_percent } = req.body;
     
-    await db.query('UPDATE categories SET discount_percent = ? WHERE id = ?', [discount_percent || 0, id]);
+    if (!name) {
+      return res.status(400).json({ message: 'Category name is required' });
+    }
+
+    let imageUrl = null;
+    if (req.file) {
+      const filename = `${Date.now()}.webp`;
+      await sharp(req.file.buffer)
+        .webp({ quality: 80 })
+        .toFile(path.join(__dirname, '../uploads', filename));
+      imageUrl = filename;
+    }
+    
+    if (imageUrl) {
+      await db.query('UPDATE categories SET name = ?, discount_percent = ?, image_url = ? WHERE id = ?', [name, discount_percent || 0, imageUrl, id]);
+    } else {
+      await db.query('UPDATE categories SET name = ?, discount_percent = ? WHERE id = ?', [name, discount_percent || 0, id]);
+    }
+    
     res.json({ message: 'Category updated' });
   } catch (error) {
     console.error('Error updating category:', error);
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'Category name already exists' });
+    }
     res.status(500).json({ message: 'Server error' });
   }
 });
