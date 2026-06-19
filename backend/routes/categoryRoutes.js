@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
 // @access  Private Admin
 router.post('/', adminAuth, upload.single('image'), async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, discount_percent } = req.body;
     
     let imageUrl = null;
     if (req.file) {
@@ -44,8 +44,8 @@ router.post('/', adminAuth, upload.single('image'), async (req, res) => {
     }
 
     const [result] = await db.query(
-      'INSERT INTO categories (name, image_url) VALUES (?, ?)',
-      [name, imageUrl]
+      'INSERT INTO categories (name, image_url, discount_percent) VALUES (?, ?, ?)',
+      [name, imageUrl, discount_percent || 0]
     );
 
     res.status(201).json({ message: 'Category created', id: result.insertId });
@@ -68,6 +68,22 @@ router.delete('/:id', adminAuth, async (req, res) => {
     res.json({ message: 'Category deleted' });
   } catch (error) {
     console.error('Error deleting category:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/categories/:id
+// @desc    Update a category (Admin only)
+// @access  Private Admin
+router.put('/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { discount_percent } = req.body;
+    
+    await db.query('UPDATE categories SET discount_percent = ? WHERE id = ?', [discount_percent || 0, id]);
+    res.json({ message: 'Category updated' });
+  } catch (error) {
+    console.error('Error updating category:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

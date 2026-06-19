@@ -28,9 +28,9 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const [orderItems, setOrderItems] = useState([]);
   const ORDERS_PER_PAGE = 5;
   
-  const [form, setForm] = useState({ name: '', category: '', price: '', stock: '', description: '', vehicle_ids: [], image: null });
+  const [form, setForm] = useState({ name: '', category: '', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], image: null });
   const [vForm, setVForm] = useState({ make: '', model: '', year_start: '', year_end: '' });
-  const [cForm, setCForm] = useState({ name: '', image: null });
+  const [cForm, setCForm] = useState({ name: '', discount_percent: '', image: null });
 
   const token = localStorage.getItem('token');
 
@@ -66,6 +66,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       formData.append('name', form.name);
       formData.append('category', form.category);
       formData.append('price', form.price);
+      formData.append('discount_percent', form.discount_percent || 0);
       formData.append('stock', form.stock);
       formData.append('description', form.description);
       formData.append('vehicle_ids', JSON.stringify(form.vehicle_ids));
@@ -83,7 +84,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       });
       if (res.ok) {
         addToast(editingProductId ? 'Product updated!' : 'Product added!', 'success');
-        setForm({ name: '', category: 'Engine Oil', price: '', stock: '', description: '', vehicle_ids: [], image: null });
+        setForm({ name: '', category: categories.length > 0 ? categories[0].name : 'Engine Oil', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], image: null });
         setEditingProductId(null);
         const fileInput = document.getElementById('product-image-upload');
         if (fileInput) fileInput.value = '';
@@ -98,6 +99,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       name: p.name,
       category: p.category || 'Engine Oil',
       price: p.price,
+      discount_percent: p.discount_percent || '',
       stock: p.stock,
       description: p.description || '',
       vehicle_ids: p.vehicle_ids || [],
@@ -137,6 +139,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
     e.preventDefault();
     const formData = new FormData();
     formData.append('name', cForm.name);
+    formData.append('discount_percent', cForm.discount_percent || 0);
     if (cForm.image) formData.append('image', cForm.image);
 
     const res = await fetch('/api/categories', {
@@ -145,7 +148,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       body: formData
     });
     if (res.ok) {
-      setCForm({ name: '', image: null });
+      setCForm({ name: '', discount_percent: '', image: null });
       fetchCategories();
     } else {
       const data = await res.json();
@@ -160,6 +163,16 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       await fetch(`/api/categories/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
       fetchCategories();
     } catch (err) { addToast('Error deleting category', 'error'); }
+  };
+
+  const handleEditCategoryDiscount = async (id, currentDiscount) => {
+    const newDiscount = prompt('Enter new discount percentage (0-100):', currentDiscount);
+    if (newDiscount === null) return;
+    try {
+      await fetch(`/api/categories/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-auth-token': token }, body: JSON.stringify({ discount_percent: parseInt(newDiscount) || 0 }) });
+      fetchCategories();
+      addToast('Category discount updated', 'success');
+    } catch (err) { addToast('Error updating category', 'error'); }
   };
 
   const handleUpdateOrder = async (orderId, newStatus, newTracking) => {
@@ -391,6 +404,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
               </div>
               <div style={{ display: 'flex', gap: 20 }}>
                 <div className="form-group" style={{ flex: 1 }}><label className="form-label">Price (LKR)</label><input required type="number" className="form-input" value={form.price} onChange={e => updateForm('price', e.target.value)} /></div>
+                <div className="form-group" style={{ flex: 1 }}><label className="form-label">Discount (%)</label><input type="number" className="form-input" placeholder="0" value={form.discount_percent} onChange={e => updateForm('discount_percent', e.target.value)} /></div>
                 <div className="form-group" style={{ flex: 1 }}><label className="form-label">Stock</label><input required type="number" className="form-input" value={form.stock} onChange={e => updateForm('stock', e.target.value)} /></div>
               </div>
               <div className="form-group">
@@ -442,7 +456,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
 
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
-                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>ID</th><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Price</th><th style={{ padding: 12 }}>Stock</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
+                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>ID</th><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Price</th><th style={{ padding: 12 }}>Discount</th><th style={{ padding: 12 }}>Stock</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
                 <tbody>
                   {(() => {
                     const filtered = products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || String(p.id) === productSearch);
@@ -452,7 +466,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                       <>
                         {current.map(p => (
                           <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                            <td style={{ padding: 12 }}>#{p.id}</td><td style={{ padding: 12 }}>{p.name}</td><td style={{ padding: 12 }}>Rs. {p.price}</td>
+                            <td style={{ padding: 12 }}>#{p.id}</td><td style={{ padding: 12 }}>{p.name}</td><td style={{ padding: 12 }}>Rs. {p.price}</td><td style={{ padding: 12 }}>{p.discount_percent ? `${p.discount_percent}%` : '-'}</td>
                             <td style={{ padding: 12 }}><span style={{ color: p.stock === 0 ? 'var(--red)' : 'inherit' }}>{p.stock === 0 ? 'Out of Stock' : p.stock}</span></td>
                             <td style={{ padding: 12, display: 'flex', gap: 8 }}>
                               <button onClick={() => handleEditProduct(p)} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer' }}><Edit size={18} /></button>
@@ -656,6 +670,10 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                 <label className="form-label">Category Name</label>
                 <input required type="text" className="form-input" value={cForm.name} onChange={e => setCForm({ ...cForm, name: e.target.value })} />
               </div>
+              <div style={{ flex: '1 1 100px' }}>
+                <label className="form-label">Discount (%)</label>
+                <input type="number" className="form-input" placeholder="0" value={cForm.discount_percent} onChange={e => setCForm({ ...cForm, discount_percent: e.target.value })} />
+              </div>
               <div style={{ flex: '1 1 200px' }}>
                 <label className="form-label">Category Image (Optional)</label>
                 <input type="file" className="form-input" accept="image/*" onChange={e => setCForm({ ...cForm, image: e.target.files[0] })} style={{ padding: '8px 12px' }} />
@@ -675,7 +693,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                           <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.1)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</div>
                         )}
                       </td>
-                      <td style={{ padding: 12 }}>{c.name}</td>
+                      <td style={{ padding: 12 }}>{c.name} {c.discount_percent > 0 && <span style={{ color: '#eab308', marginLeft: 8, fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => handleEditCategoryDiscount(c.id, c.discount_percent)}>({c.discount_percent}% OFF ✎)</span>} {(!c.discount_percent || c.discount_percent === 0) && <span style={{ color: 'var(--muted)', marginLeft: 8, fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => handleEditCategoryDiscount(c.id, 0)}>(Add Discount)</span>}</td>
                       <td style={{ padding: 12 }}><button onClick={() => handleDeleteCategory(c.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button></td>
                     </tr>
                   ))}

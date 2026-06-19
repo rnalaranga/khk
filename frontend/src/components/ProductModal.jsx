@@ -12,13 +12,18 @@ const CAT_IMAGE = {
   'Brake Washers': '/prod_brakes.png',
 };
 
-export default function ProductModal({ product, onClose, onAddToCart }) {
+export default function ProductModal({ isOpen, onClose, product, onAddToCart, vehicleSelected, categories = [] }) {
   const [added, setAdded] = useState(false);
 
   if (!product) return null;
 
-  const finalPrice = product.discount_percent > 0
-    ? Math.round(product.price * (1 - product.discount_percent / 100))
+  const categoryMatch = categories.find(c => c.name === product.category);
+  const catDiscount = categoryMatch ? (categoryMatch.discount_percent || 0) : 0;
+  const prodDiscount = product.discount_percent || 0;
+  const bestDiscount = Math.max(catDiscount, prodDiscount);
+
+  const finalPrice = bestDiscount > 0
+    ? Math.round(product.price * (1 - bestDiscount / 100))
     : product.price;
 
   const imageSrc = product.image_url 
@@ -52,10 +57,13 @@ export default function ProductModal({ product, onClose, onAddToCart }) {
               <span style={{ color: 'var(--red)', textTransform: 'uppercase', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '0.05em' }}>{product.category}</span>
               <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '2rem', color: 'var(--white)', margin: '8px 0' }}>{product.name}</h2>
               {product.stock === 0 ? (
-                <span style={{ background: '#333', color: 'white', padding: '4px 8px', borderRadius: 4, fontSize: '0.8rem' }}>OUT OF STOCK</span>
+                <span className="badge-sale" style={{ background: '#333' }}>OUT OF STOCK</span>
               ) : (
-                <span style={{ color: '#4ade80', fontSize: '0.9rem' }}>{product.stock} items available</span>
+                bestDiscount > 0 && (
+                  <span className="badge-sale">-{bestDiscount}% OFF</span>
+                )
               )}
+              <span style={{ color: '#4ade80', fontSize: '0.9rem', display: 'block', marginTop: 4 }}>{product.stock} items available</span>
             </div>
 
             <div style={{ background: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 8, border: '1px solid var(--border)' }}>
@@ -73,9 +81,11 @@ export default function ProductModal({ product, onClose, onAddToCart }) {
             )}
 
             <div style={{ marginTop: 'auto', paddingTop: 20, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-              <div style={{ whiteSpace: 'nowrap' }}>
-                {product.discount_percent > 0 && (
-                  <span style={{ textDecoration: 'line-through', color: 'var(--muted)', fontSize: '0.9rem', marginRight: 8 }}>Rs. {product.price.toLocaleString()}</span>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {bestDiscount > 0 && (
+                  <span style={{ textDecoration: 'line-through', color: 'var(--muted)', fontSize: '0.9rem' }}>
+                    Rs. {product.price.toLocaleString()}
+                  </span>
                 )}
                 <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--white)' }}>Rs. {finalPrice.toLocaleString()}</span>
               </div>

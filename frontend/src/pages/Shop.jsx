@@ -106,7 +106,7 @@ export default function Shop({ products, categories = [], onAddToCart }) {
               <>
                 <div className="product-grid">
                   {currentProducts.map(p => (
-                    <ProductCard key={p.id} product={p} onAddToCart={onAddToCart} />
+                    <ProductCard key={p.id} product={p} onAddToCart={onAddToCart} categories={categories} />
                   ))}
                 </div>
                 {totalPages > 1 && (

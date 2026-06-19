@@ -13,12 +13,17 @@ const CAT_IMAGE = {
   'Brake Washers': '/prod_brakes.png',
 };
 
-export default function ProductCard({ product, onAddToCart, vehicleSelected }) {
+export default function ProductCard({ product, onAddToCart, vehicleSelected, categories = [] }) {
   const [added, setAdded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const finalPrice = product.discount_percent > 0
-    ? Math.round(product.price * (1 - product.discount_percent / 100))
+  const categoryMatch = categories.find(c => c.name === product.category);
+  const catDiscount = categoryMatch ? (categoryMatch.discount_percent || 0) : 0;
+  const prodDiscount = product.discount_percent || 0;
+  const bestDiscount = Math.max(catDiscount, prodDiscount);
+
+  const finalPrice = bestDiscount > 0
+    ? Math.round(product.price * (1 - bestDiscount / 100))
     : product.price;
 
   const cvLower = (product.compatible_vehicles || '').toLowerCase();
@@ -46,8 +51,8 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected }) {
         {product.stock === 0 ? (
           <span className="badge-sale" style={{ background: '#333' }}>OUT OF STOCK</span>
         ) : (
-          product.discount_percent > 0 && (
-            <span className="badge-sale">-{product.discount_percent}% OFF</span>
+          bestDiscount > 0 && (
+            <span className="badge-sale">-{bestDiscount}% OFF</span>
           )
         )}
         {isCompatible && <span className="badge-compat">✓ Fits Your Car</span>}
@@ -70,7 +75,7 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected }) {
 
         <div className="pcard-footer">
           <div className="price-wrap">
-            {product.discount_percent > 0 && (
+            {bestDiscount > 0 && (
               <span className="price-orig">Rs. {product.price.toLocaleString()}</span>
             )}
             <span className="price-final">Rs. {finalPrice.toLocaleString()}</span>
@@ -89,9 +94,12 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected }) {
 
       {isModalOpen && (
         <ProductModal 
-          product={product} 
+          isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 
-          onAddToCart={onAddToCart} 
+          product={product} 
+          onAddToCart={onAddToCart}
+          vehicleSelected={vehicleSelected}
+          categories={categories}
         />
       )}
     </>

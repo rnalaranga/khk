@@ -247,7 +247,7 @@ export default function Home({ products, categories = [], onAddToCart }) {
             </div>
             <div className="deals-row" ref={dealsRef}>
               {hotDeals.map((p, i) => (
-                <ProductCard key={p.id} product={p} onAddToCart={onAddToCart} vehicleSelected={vehicleSelected} />
+                <ProductCard key={p.id} product={p} onAddToCart={onAddToCart} vehicleSelected={vehicleSelected} categories={categories} />
               ))}
             </div>
           </div>
@@ -268,7 +268,7 @@ export default function Home({ products, categories = [], onAddToCart }) {
           </div>
           <div className="product-grid">
             {featured.map(p => (
-              <ProductCard key={p.id} product={p} onAddToCart={onAddToCart} vehicleSelected={vehicleSelected} />
+              <ProductCard key={p.id} product={p} onAddToCart={onAddToCart} vehicleSelected={vehicleSelected} categories={categories} />
             ))}
           </div>
         </div>
