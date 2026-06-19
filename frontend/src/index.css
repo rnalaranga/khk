@@ -506,30 +506,89 @@ img { display: block; }
 .section { padding: 80px 0; }
 .section-dark { background: var(--dark); }
 
-.hot-deals-section {
-  background: var(--dark);
+.hot-deals-v2 {
+  background: #f2f2f2;
   position: relative;
   overflow: hidden;
-  border-top: 2px solid var(--red);
-  border-bottom: 2px solid var(--red);
+  padding: 0 0 60px 0;
 }
-.bg-gear {
+.hd-gear {
   position: absolute;
-  color: var(--red);
-  opacity: 0.12;
+  color: #d5d5d5;
+  opacity: 0.5;
   pointer-events: none;
   z-index: 0;
 }
-.bg-gear-1 {
-  top: -20%; left: -10%;
-  animation: spin-gear 30s linear infinite;
+.hd-gear-1 {
+  top: -15%; left: -8%;
+  animation: hd-spin 40s linear infinite;
 }
-.bg-gear-2 {
-  bottom: -20%; right: -5%;
-  animation: spin-gear-reverse 25s linear infinite;
+.hd-gear-2 {
+  bottom: -10%; right: -3%;
+  animation: hd-spin-rev 35s linear infinite;
 }
-@keyframes spin-gear { 100% { transform: rotate(360deg); } }
-@keyframes spin-gear-reverse { 100% { transform: rotate(-360deg); } }
+.hd-gear-3 {
+  top: 30%; right: 15%;
+  animation: hd-spin 50s linear infinite;
+}
+@keyframes hd-spin { 100% { transform: rotate(360deg); } }
+@keyframes hd-spin-rev { 100% { transform: rotate(-360deg); } }
+.hot-deals-banner {
+  background: linear-gradient(135deg, #e4000f 0%, #9c1c15 100%);
+  padding: 28px 0;
+  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+.hot-deals-banner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 15px,
+    rgba(255,255,255,0.05) 15px,
+    rgba(255,255,255,0.05) 30px
+  );
+  pointer-events: none;
+}
+.hot-deals-banner h2 {
+  color: #fff;
+  font-size: 2rem;
+  font-family: var(--font-hero);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin: 0;
+  text-align: center;
+  font-weight: 900;
+  position: relative;
+  z-index: 1;
+}
+.hot-deals-banner .hd-sub {
+  color: rgba(255,255,255,0.85);
+  text-align: center;
+  font-size: 0.85rem;
+  margin: 6px 0 0 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+.hot-deals-v2 .deals-row {
+  position: relative;
+  z-index: 1;
+}
+.hot-deals-v2 .product-card {
+  border: 1px solid rgba(228,0,15,0.2);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.hot-deals-v2 .product-card:hover {
+  border-color: var(--red);
+  box-shadow: 0 0 20px rgba(228,0,15,0.15);
+}
 
 .section-header {
   display: flex; justify-content: space-between; align-items: flex-end;

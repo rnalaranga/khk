@@ -229,10 +229,8 @@ export default function Home({ products, categories = [], onAddToCart }) {
 
       {/* ── Hot Deals ── */}
       {hotDeals.length > 0 && (
-        <section className="section hot-deals-section">
-          <Settings size={600} strokeWidth={0.5} className="bg-gear bg-gear-1" />
-          <Settings size={400} strokeWidth={0.5} className="bg-gear bg-gear-2" />
-          <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+        <section className="section section-dark">
+          <div className="container">
             <div className="section-header">
               <div className="section-title-wrap">
                 <div className="section-eyebrow">Limited Time</div>
