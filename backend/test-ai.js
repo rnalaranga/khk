@@ -2,10 +2,11 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 async function test() {
   try {
-    const key = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6KiO2w9bxAOatdTWrhGHKStXWy6Vj-69tOumOZIIP9-Ng';
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-    const data = await response.json();
-    console.log(data.models.map(m => m.name).join('\n'));
+    const key = 'AQ.Ab8RN6LTSuWHdgHIS5Hailq0ilH3UqCK5vuNPph4fdwCU3eYUQ';
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const result = await model.generateContent("Hello");
+    console.log(result.response.text());
   } catch (err) {
     console.error("ERROR:", err);
   }

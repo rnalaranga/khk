@@ -1,19 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-const SYSTEM_PROMPT = `You are a parts search assistant. Extract the vehicle make, vehicle model, and product categories from the user's query.
-Available Categories: "Engine Oil", "Brake Pads", "Chemicals", "Combo Deals", "Filters", "Coolant", "Wiper Blades", "Brake Washers".
-Respond ONLY with a valid JSON object matching this schema:
-{
-  "make": "string or null",
-  "model": "string or null",
-  "categories": ["array of matching category strings"]
-}
-If no vehicle or categories are found, return nulls or empty arrays. Do not add markdown blocks like \`\`\`json. Return pure JSON.`;
+// A simple dictionary for category synonyms to make the local AI smarter
+const CATEGORY_SYNONYMS = {
+  "Engine Oil": ["oil", "engine oil", "motor oil", "lube"],
+  "Brake Pads": ["brake", "brakes", "pad", "pads", "brake pad", "brake pads"],
+  "Chemicals": ["chemical", "chemicals", "cleaner", "spray", "additive", "treatment"],
+  "Combo Deals": ["combo", "deal", "deals", "package", "bundle"],
+  "Filters": ["filter", "filters", "air filter", "oil filter", "cabin filter"],
+  "Coolant": ["coolant", "coolants", "radiator fluid", "antifreeze"],
+  "Wiper Blades": ["wiper", "wipers", "blade", "blades", "wiper blade", "wiper blades"],
+  "Brake Washers": ["washer", "washers", "brake washer", "brake washers"]
+};
 
 router.post('/search', async (req, res) => {
   try {
@@ -22,29 +21,81 @@ router.post('/search', async (req, res) => {
       return res.status(400).json({ message: 'Query is required' });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ message: 'AI API Key not configured' });
-    }
+    const lowerQuery = query.toLowerCase();
 
-    // 1. Call Gemini to extract intent
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const fullPrompt = `${SYSTEM_PROMPT}\n\nUser Query: ${query}`;
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: fullPrompt }] }]
-    });
+    // 1. Fetch all vehicles and categories from DB to build our "knowledge base"
+    const [vehicles] = await db.query('SELECT DISTINCT make, model FROM vehicles');
+    const [categoriesDB] = await db.query('SELECT DISTINCT name FROM categories');
     
-    const responseText = result.response.text().trim();
-    let parsedIntent;
-    try {
-      parsedIntent = JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, ''));
-    } catch (e) {
-      console.error('Failed to parse AI JSON:', responseText);
-      return res.status(500).json({ message: 'AI failed to understand the query' });
+    let matchedMake = null;
+    let matchedModel = null;
+    let matchedCategories = [];
+
+    // 2. Extract Make and Model
+    // Sort makes and models by length descending to match longest phrases first (e.g. "Land Rover" before "Rover")
+    const makes = [...new Set(vehicles.map(v => v.make))].sort((a, b) => b.length - a.length);
+    for (const make of makes) {
+      if (lowerQuery.includes(make.toLowerCase())) {
+        matchedMake = make;
+        break;
+      }
     }
 
-    const { make, model: vehicleModel, categories } = parsedIntent;
+    // Filter models by the matched make if found, otherwise search all models
+    let availableModels = matchedMake 
+      ? vehicles.filter(v => v.make === matchedMake).map(v => v.model)
+      : vehicles.map(v => v.model);
+    
+    availableModels = [...new Set(availableModels)].sort((a, b) => b.length - a.length);
+    
+    for (const model of availableModels) {
+      if (lowerQuery.includes(model.toLowerCase())) {
+        matchedModel = model;
+        // If we found a model but haven't found a make yet, automatically assign the make
+        if (!matchedMake) {
+          const v = vehicles.find(v => v.model === model);
+          if (v) matchedMake = v.make;
+        }
+        break;
+      }
+    }
 
-    // 2. Base Query
+    // 3. Extract Categories using exact DB matches and synonyms
+    const dbCategories = categoriesDB.map(c => c.name);
+    
+    for (const cat of dbCategories) {
+      let isMatch = false;
+      
+      // Check exact match
+      if (lowerQuery.includes(cat.toLowerCase())) {
+        isMatch = true;
+      } else {
+        // Check synonyms
+        const synonyms = CATEGORY_SYNONYMS[cat];
+        if (synonyms) {
+          for (const syn of synonyms) {
+            // Use regex boundaries to match exact words (e.g. avoid matching "coil" for "oil")
+            const regex = new RegExp(`\\b${syn}\\b`, 'i');
+            if (regex.test(lowerQuery)) {
+              isMatch = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      if (isMatch) {
+        matchedCategories.push(cat);
+      }
+    }
+
+    const parsedIntent = {
+      make: matchedMake,
+      model: matchedModel,
+      categories: matchedCategories
+    };
+
+    // 4. Base Query
     let sql = `
       SELECT DISTINCT p.* 
       FROM products p 
@@ -54,36 +105,36 @@ router.post('/search', async (req, res) => {
     `;
     const params = [];
 
-    // 3. Apply Filters
-    if (categories && categories.length > 0) {
-      const placeholders = categories.map(() => '?').join(',');
+    // 5. Apply Filters
+    if (parsedIntent.categories && parsedIntent.categories.length > 0) {
+      const placeholders = parsedIntent.categories.map(() => '?').join(',');
       sql += ` AND p.category IN (${placeholders})`;
-      params.push(...categories);
+      params.push(...parsedIntent.categories);
     }
 
-    if (make || vehicleModel) {
+    if (parsedIntent.make || parsedIntent.model) {
       sql += ` AND (`;
       const conditions = [];
-      if (make) {
+      if (parsedIntent.make) {
         conditions.push(`v.make LIKE ?`);
-        params.push(`%${make}%`);
+        params.push(`%${parsedIntent.make}%`);
       }
-      if (vehicleModel) {
+      if (parsedIntent.model) {
         conditions.push(`v.model LIKE ?`);
-        params.push(`%${vehicleModel}%`);
+        params.push(`%${parsedIntent.model}%`);
       }
       sql += conditions.join(' AND ');
       sql += `)`;
     }
 
     // If no specific filters were found, return empty array to prevent dumping everything
-    if (!make && !vehicleModel && (!categories || categories.length === 0)) {
+    if (!parsedIntent.make && !parsedIntent.model && (!parsedIntent.categories || parsedIntent.categories.length === 0)) {
        return res.json({ intent: parsedIntent, products: [] });
     }
 
     const [products] = await db.query(sql, params);
 
-    // 4. Attach vehicle names and format images (same as productRoutes.js)
+    // 6. Attach vehicle names and format images (same as productRoutes.js)
     const productIds = products.map(p => p.id);
     if (productIds.length > 0) {
       const [mappings] = await db.query(`
@@ -109,7 +160,7 @@ router.post('/search', async (req, res) => {
     res.json({ intent: parsedIntent, products });
 
   } catch (error) {
-    console.error('AI Search Error:', error);
+    console.error('Local AI Search Error:', error);
     res.status(500).json({ message: 'Server Error during AI Search' });
   }
 });

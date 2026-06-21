@@ -1,6 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Sparkles, Loader2 } from 'lucide-react';
+import { MessageSquare, X, Send, Sparkles, Loader2, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import ProductCard from './ProductCard';
+
+const CAT_IMAGE = {
+  'Engine Oil': '/prod_oil.png',
+  'Brake Pads': '/prod_brakes.png',
+  'Chemicals': '/prod_chemical.png',
+  'Combo Deals': '/prod_oil.png',
+  'Filters': '/prod_oil.png',
+  'Coolant': '/prod_chemical.png',
+  'Wiper Blades': '/prod_brakes.png',
+  'Brake Washers': '/prod_brakes.png',
+};
 
 export default function AIChat({ onAddToCart, categories, isOpen, setIsOpen }) {
   const [messages, setMessages] = useState([
@@ -9,6 +21,7 @@ export default function AIChat({ onAddToCart, categories, isOpen, setIsOpen }) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const navigate = useNavigate();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -59,34 +72,49 @@ export default function AIChat({ onAddToCart, categories, isOpen, setIsOpen }) {
 
   return (
     <>
-      {/* Floating Button */}
+      {/* Floating Button and Tooltip */}
       {!isOpen && (
-        <button 
-          onClick={() => setIsOpen(true)}
-          style={{
-            position: 'fixed',
-            bottom: 30,
-            right: 30,
-            width: 60,
-            height: 60,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, var(--red), #ff4d4d)',
-            border: 'none',
-            color: 'white',
+        <div className="ai-chat-btn-container" style={{ position: 'fixed', bottom: 30, right: 30, zIndex: 9999, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div className="ai-tooltip" style={{ 
+            background: 'var(--bg-card)', 
+            border: '1px solid var(--border)', 
+            padding: '10px 16px', 
+            borderRadius: 24, 
+            boxShadow: 'var(--shadow)',
+            color: 'var(--text-main)',
+            fontSize: '0.9rem',
+            fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 8px 24px rgba(228, 0, 15, 0.4)',
+            gap: 8,
             cursor: 'pointer',
-            zIndex: 9999,
-            transition: 'transform 0.2s',
-          }}
-          className="ai-chat-btn"
-          onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          <Sparkles size={28} />
-        </button>
+            animation: 'slideInRight 0.5s ease-out'
+          }} onClick={() => setIsOpen(true)}>
+            <Sparkles size={16} color="var(--red)" /> Ask AI Assistant
+          </div>
+          <button 
+            onClick={() => setIsOpen(true)}
+            style={{
+              width: 60,
+              height: 60,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--red), #ff4d4d)',
+              border: 'none',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 24px rgba(228, 0, 15, 0.4)',
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+            }}
+            className="ai-chat-btn"
+            onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <Sparkles size={28} />
+          </button>
+        </div>
       )}
 
       {/* Chat Window */}
@@ -146,15 +174,59 @@ export default function AIChat({ onAddToCart, categories, isOpen, setIsOpen }) {
                 alignItems: msg.type === 'user' ? 'flex-end' : 'flex-start'
               }}>
                 {msg.type === 'products' ? (
-                  <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, width: '100%', maxWidth: '100%' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', paddingBottom: 8 }}>
                     {msg.products.map(p => (
-                      <div key={p.id} style={{ minWidth: 200, flexShrink: 0, transform: 'scale(0.9)', transformOrigin: 'top left' }}>
-                         <ProductCard 
-                          product={p} 
-                          onAddToCart={onAddToCart} 
-                          categories={categories}
-                          vehicleSelected={{ make: '', model: '' }} 
+                      <div 
+                        key={p.id} 
+                        onClick={() => {
+                          setIsOpen(false);
+                          navigate(`/shop?search=${encodeURIComponent(p.name)}`);
+                        }}
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 12, 
+                          background: 'var(--bg-surface)', 
+                          padding: 10, 
+                          borderRadius: 12, 
+                          border: '1px solid var(--border)',
+                          width: '100%',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = 'var(--bg-card)'}
+                        onMouseOut={e => e.currentTarget.style.background = 'var(--bg-surface)'}
+                      >
+                        <img 
+                          src={(p.images && p.images.length > 0) ? `/api/uploads/${p.images[0]}` : (p.image_url ? `/api/uploads/${p.image_url}` : (p.image || CAT_IMAGE[p.category] || '/placeholder.png'))} 
+                          alt={p.name}
+                          style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, background: 'white' }} 
                         />
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {p.name}
+                          </div>
+                          <div style={{ color: 'var(--red)', fontWeight: 'bold', fontSize: '0.9rem', marginTop: 4 }}>
+                            Rs. {p.price.toLocaleString()}
+                          </div>
+                        </div>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); onAddToCart(p); }}
+                          style={{
+                            background: 'var(--bg-body)',
+                            color: 'var(--text-main)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 8,
+                            padding: '6px 10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer'
+                          }}
+                          title="Search in Shop"
+                        >
+                          <Search size={16} />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -232,9 +304,10 @@ export default function AIChat({ onAddToCart, categories, isOpen, setIsOpen }) {
       <style>{`
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes slideInRight { 0% { opacity: 0; transform: translateX(20px); } 100% { opacity: 1; transform: translateX(0); } }
         
         @media (max-width: 768px) {
-          .ai-chat-btn {
+          .ai-chat-btn-container {
             display: none !important;
           }
           .ai-chat-window {
