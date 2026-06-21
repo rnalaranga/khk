@@ -29,7 +29,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const [orderItems, setOrderItems] = useState([]);
   const ORDERS_PER_PAGE = 5;
   
-  const [form, setForm] = useState({ name: '', category: '', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], images: [] });
+  const [form, setForm] = useState({ name: '', category: '', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], image: null, image_2: null, image_3: null, existing_image: null, existing_image_2: null, existing_image_3: null, remove_image: false, remove_image_2: false, remove_image_3: false });
   const [vForm, setVForm] = useState({ make: '', model: '', year_start: '', year_end: '' });
   const [cForm, setCForm] = useState({ name: '', discount_percent: '', image: null });
 
@@ -71,11 +71,12 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       formData.append('stock', form.stock);
       formData.append('description', form.description);
       formData.append('vehicle_ids', JSON.stringify(form.vehicle_ids));
-      if (form.images && form.images.length > 0) {
-        form.images.forEach(img => {
-          if (img instanceof File) formData.append('images', img);
-        });
-      }
+      if (form.image instanceof File) formData.append('image', form.image);
+      if (form.image_2 instanceof File) formData.append('image_2', form.image_2);
+      if (form.image_3 instanceof File) formData.append('image_3', form.image_3);
+      if (form.remove_image) formData.append('remove_image', 'true');
+      if (form.remove_image_2) formData.append('remove_image_2', 'true');
+      if (form.remove_image_3) formData.append('remove_image_3', 'true');
 
       const method = editingProductId ? 'PUT' : 'POST';
       const url = editingProductId ? `/api/products/${editingProductId}` : `/api/products`;
@@ -87,10 +88,12 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       });
       if (res.ok) {
         addToast(editingProductId ? 'Product updated!' : 'Product added!', 'success');
-        setForm({ name: '', category: categories.length > 0 ? categories[0].name : 'Engine Oil', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], images: [] });
+        setForm({ name: '', category: categories.length > 0 ? categories[0].name : 'Engine Oil', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], image: null, image_2: null, image_3: null, existing_image: null, existing_image_2: null, existing_image_3: null, remove_image: false, remove_image_2: false, remove_image_3: false });
         setEditingProductId(null);
-        const fileInput = document.getElementById('product-image-upload');
-        if (fileInput) fileInput.value = '';
+        ['product-image-upload', 'product-image-upload-2', 'product-image-upload-3'].forEach(id => {
+          const fileInput = document.getElementById(id);
+          if (fileInput) fileInput.value = '';
+        });
         fetchProducts();
       } else addToast('Error saving product', 'error');
     } catch (err) { addToast('Network error', 'error'); }
@@ -106,7 +109,15 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       stock: p.stock,
       description: p.description || '',
       vehicle_ids: p.vehicle_ids || [],
-      images: []
+      image: null,
+      image_2: null,
+      image_3: null,
+      existing_image: p.image_url || null,
+      existing_image_2: p.image_url_2 || null,
+      existing_image_3: p.image_url_3 || null,
+      remove_image: false,
+      remove_image_2: false,
+      remove_image_3: false
     });
     setTab('add_product');
   };
@@ -289,7 +300,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
         <button onClick={() => setTab('dashboard')} className={tab === 'dashboard' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Activity size={18} /> Dashboard</button>
         <button onClick={() => setTab('orders')} className={tab === 'orders' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Server size={18} /> View Orders</button>
         <button onClick={() => setTab('products')} className={tab === 'products' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Package size={18} /> Manage Products</button>
-        <button onClick={() => { setTab('add_product'); setEditingProductId(null); setForm({ name: '', category: categories.length > 0 ? categories[0].name : '', price: '', stock: '', description: '', vehicle_ids: [], images: [] }); }} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Plus size={18} /> Add Product</button>
+        <button onClick={() => { setTab('add_product'); setEditingProductId(null); setForm({ name: '', category: categories.length > 0 ? categories[0].name : '', price: '', stock: '', description: '', vehicle_ids: [], image: null, image_2: null, image_3: null, existing_image: null, existing_image_2: null, existing_image_3: null, remove_image: false, remove_image_2: false, remove_image_3: false }); }} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Plus size={18} /> Add Product</button>
         <button onClick={() => setTab('categories')} className={tab === 'categories' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><PackageOpen size={18} /> Categories</button>
         <button onClick={() => setTab('vehicles')} className={tab === 'vehicles' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Car size={18} /> Vehicles</button>
         <button onClick={() => setTab('customers')} className={tab === 'customers' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Users size={18} /> Customers</button>
@@ -427,28 +438,51 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
               </div>
               <div className="form-group">
                 <label className="form-label">Product Images (up to 3)</label>
-                <input 
-                  type="file" 
-                  id="product-image-upload"
-                  className="form-input" 
-                  accept="image/*"
-                  multiple
-                  onChange={e => {
-                    const files = Array.from(e.target.files).slice(0, 3);
-                    updateForm('images', files);
-                  }} 
-                />
-                <p style={{ color: 'var(--muted)', fontSize: '0.8rem', marginTop: 4 }}>Select up to 3 images. First image will be the main thumbnail.</p>
-                {form.images && form.images.length > 0 && (
-                  <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-                    {form.images.map((img, i) => (
-                      <div key={i} style={{ position: 'relative', width: 70, height: 70, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
-                        <img src={img instanceof File ? URL.createObjectURL(img) : `/api/uploads/${img}`} alt={`Preview ${i+1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <span style={{ position: 'absolute', top: 2, left: 4, background: 'var(--red)', color: '#fff', fontSize: '0.6rem', padding: '1px 4px', borderRadius: 4 }}>{i === 0 ? 'Main' : `#${i+1}`}</span>
+                <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                  
+                  {/* Image 1 (Main) */}
+                  <div style={{ flex: 1, minWidth: 200, background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8, border: '1px solid var(--border)' }}>
+                    <label style={{ display: 'block', marginBottom: 8, color: 'var(--muted)', fontSize: '0.85rem' }}>Main Image</label>
+                    <input type="file" id="product-image-upload" accept="image/*" onChange={e => updateForm('image', e.target.files[0])} style={{ width: '100%', fontSize: '0.8rem', marginBottom: 12 }} />
+                    {(form.image || (form.existing_image && !form.remove_image)) && (
+                      <div style={{ position: 'relative', width: 80, height: 80, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                        <img src={form.image ? URL.createObjectURL(form.image) : `/api/uploads/${form.existing_image}`} alt="Main" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {form.existing_image && !form.image && (
+                          <button type="button" onClick={() => updateForm('remove_image', true)} style={{ position: 'absolute', top: 2, right: 2, background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '0.7rem' }}>X</button>
+                        )}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
+
+                  {/* Image 2 */}
+                  <div style={{ flex: 1, minWidth: 200, background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8, border: '1px solid var(--border)' }}>
+                    <label style={{ display: 'block', marginBottom: 8, color: 'var(--muted)', fontSize: '0.85rem' }}>Image 2</label>
+                    <input type="file" id="product-image-upload-2" accept="image/*" onChange={e => updateForm('image_2', e.target.files[0])} style={{ width: '100%', fontSize: '0.8rem', marginBottom: 12 }} />
+                    {(form.image_2 || (form.existing_image_2 && !form.remove_image_2)) && (
+                      <div style={{ position: 'relative', width: 80, height: 80, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                        <img src={form.image_2 ? URL.createObjectURL(form.image_2) : `/api/uploads/${form.existing_image_2}`} alt="Image 2" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {form.existing_image_2 && !form.image_2 && (
+                          <button type="button" onClick={() => updateForm('remove_image_2', true)} style={{ position: 'absolute', top: 2, right: 2, background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '0.7rem' }}>X</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Image 3 */}
+                  <div style={{ flex: 1, minWidth: 200, background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8, border: '1px solid var(--border)' }}>
+                    <label style={{ display: 'block', marginBottom: 8, color: 'var(--muted)', fontSize: '0.85rem' }}>Image 3</label>
+                    <input type="file" id="product-image-upload-3" accept="image/*" onChange={e => updateForm('image_3', e.target.files[0])} style={{ width: '100%', fontSize: '0.8rem', marginBottom: 12 }} />
+                    {(form.image_3 || (form.existing_image_3 && !form.remove_image_3)) && (
+                      <div style={{ position: 'relative', width: 80, height: 80, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                        <img src={form.image_3 ? URL.createObjectURL(form.image_3) : `/api/uploads/${form.existing_image_3}`} alt="Image 3" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {form.existing_image_3 && !form.image_3 && (
+                          <button type="button" onClick={() => updateForm('remove_image_3', true)} style={{ position: 'absolute', top: 2, right: 2, background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '0.7rem' }}>X</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                </div>
               </div>
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>Compatible Vehicles <AlertCircle size={14} style={{ color: 'var(--muted)' }} /></label>

@@ -88,7 +88,7 @@ router.get('/:id', async (req, res) => {
 // @route   POST /api/products
 // @desc    Create a product (Admin only)
 // @access  Private Admin
-router.post('/', adminAuth, upload.array('images', 3), async (req, res) => {
+router.post('/', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'image_2', maxCount: 1 }, { name: 'image_3', maxCount: 1 }]), async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
@@ -98,10 +98,10 @@ router.post('/', adminAuth, upload.array('images', 3), async (req, res) => {
     
     // Process up to 3 images
     let imageUrl = null, imageUrl2 = null, imageUrl3 = null;
-    if (req.files && req.files.length > 0) {
-      imageUrl = await processImage(req.files[0].buffer);
-      if (req.files.length > 1) imageUrl2 = await processImage(req.files[1].buffer);
-      if (req.files.length > 2) imageUrl3 = await processImage(req.files[2].buffer);
+    if (req.files) {
+      if (req.files['image']) imageUrl = await processImage(req.files['image'][0].buffer);
+      if (req.files['image_2']) imageUrl2 = await processImage(req.files['image_2'][0].buffer);
+      if (req.files['image_3']) imageUrl3 = await processImage(req.files['image_3'][0].buffer);
     }
 
     if (!name || !price) {
@@ -143,20 +143,20 @@ router.post('/', adminAuth, upload.array('images', 3), async (req, res) => {
 // @route   PUT /api/products/:id
 // @desc    Update a product (Admin only)
 // @access  Private Admin
-router.put('/:id', adminAuth, upload.array('images', 3), async (req, res) => {
+router.put('/:id', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'image_2', maxCount: 1 }, { name: 'image_3', maxCount: 1 }]), async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
     const { id } = req.params;
     const { name, category, price, discount_percent, stock, description } = req.body;
-    let { vehicle_ids, remove_image_2, remove_image_3 } = req.body;
+    let { vehicle_ids, remove_image, remove_image_2, remove_image_3 } = req.body;
     
     // Process new images if uploaded
-    let newImages = [];
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        newImages.push(await processImage(file.buffer));
-      }
+    let imageUrl = null, imageUrl2 = null, imageUrl3 = null;
+    if (req.files) {
+      if (req.files['image']) imageUrl = await processImage(req.files['image'][0].buffer);
+      if (req.files['image_2']) imageUrl2 = await processImage(req.files['image_2'][0].buffer);
+      if (req.files['image_3']) imageUrl3 = await processImage(req.files['image_3'][0].buffer);
     }
 
     if (vehicle_ids && typeof vehicle_ids === 'string') {
@@ -170,25 +170,27 @@ router.put('/:id', adminAuth, upload.array('images', 3), async (req, res) => {
     let query = 'UPDATE products SET name=?, category=?, price=?, discount_percent=?, stock=?, description=?';
     let params = [name, category || null, price, discount_percent || 0, stock || 0, description || null];
 
-    // Handle images: if new images uploaded, replace accordingly
-    if (newImages.length > 0) {
+    // Handle image 1
+    if (imageUrl) {
       query += ', image_url=?';
-      params.push(newImages[0]);
-      if (newImages.length > 1) {
-        query += ', image_url_2=?';
-        params.push(newImages[1]);
-      }
-      if (newImages.length > 2) {
-        query += ', image_url_3=?';
-        params.push(newImages[2]);
-      }
+      params.push(imageUrl);
+    } else if (remove_image === 'true') {
+      query += ', image_url=NULL';
     }
 
-    // Handle removal of individual images
-    if (remove_image_2 === 'true') {
+    // Handle image 2
+    if (imageUrl2) {
+      query += ', image_url_2=?';
+      params.push(imageUrl2);
+    } else if (remove_image_2 === 'true') {
       query += ', image_url_2=NULL';
     }
-    if (remove_image_3 === 'true') {
+
+    // Handle image 3
+    if (imageUrl3) {
+      query += ', image_url_3=?';
+      params.push(imageUrl3);
+    } else if (remove_image_3 === 'true') {
       query += ', image_url_3=NULL';
     }
     
