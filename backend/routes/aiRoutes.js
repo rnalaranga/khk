@@ -2,16 +2,15 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 
-// A simple dictionary for category synonyms to make the local AI smarter
 const CATEGORY_SYNONYMS = {
-  "Engine Oil": ["oil", "engine oil", "motor oil", "lube"],
-  "Brake Pads": ["brake", "brakes", "pad", "pads", "brake pad", "brake pads"],
-  "Chemicals": ["chemical", "chemicals", "cleaner", "spray", "additive", "treatment"],
+  "Engine Oil": ["engine oil", "motor oil", "lube", "oil"],
+  "Brake Pads": ["brake pad", "brake pads", "brake shoe", "brakes", "brake"],
+  "Chemicals": ["brake oil", "brake fluid", "chemical", "chemicals", "cleaner", "spray", "additive", "treatment"],
   "Combo Deals": ["combo", "deal", "deals", "package", "bundle"],
-  "Filters": ["filter", "filters", "air filter", "oil filter", "cabin filter"],
+  "Filters": ["air filter", "oil filter", "cabin filter", "filter", "filters"],
   "Coolant": ["coolant", "coolants", "radiator fluid", "antifreeze"],
-  "Wiper Blades": ["wiper", "wipers", "blade", "blades", "wiper blade", "wiper blades"],
-  "Brake Washers": ["washer", "washers", "brake washer", "brake washers"]
+  "Wiper Blades": ["wiper blade", "wiper blades", "wiper", "wipers", "blade", "blades"],
+  "Brake Washers": ["brake washer", "brake washers", "washer", "washers"]
 };
 
 router.post('/search', async (req, res) => {
@@ -34,9 +33,13 @@ router.post('/search', async (req, res) => {
     // 2. Extract Make and Model
     // Sort makes and models by length descending to match longest phrases first (e.g. "Land Rover" before "Rover")
     const makes = [...new Set(vehicles.map(v => v.make))].sort((a, b) => b.length - a.length);
+    
+    let remainingQueryForVehicles = lowerQuery;
+    
     for (const make of makes) {
-      if (lowerQuery.includes(make.toLowerCase())) {
+      if (remainingQueryForVehicles.includes(make.toLowerCase())) {
         matchedMake = make;
+        remainingQueryForVehicles = remainingQueryForVehicles.replace(make.toLowerCase(), ' ');
         break;
       }
     }
@@ -49,13 +52,14 @@ router.post('/search', async (req, res) => {
     availableModels = [...new Set(availableModels)].sort((a, b) => b.length - a.length);
     
     for (const model of availableModels) {
-      if (lowerQuery.includes(model.toLowerCase())) {
+      if (remainingQueryForVehicles.includes(model.toLowerCase())) {
         matchedModel = model;
         // If we found a model but haven't found a make yet, automatically assign the make
         if (!matchedMake) {
           const v = vehicles.find(v => v.model === model);
           if (v) matchedMake = v.make;
         }
+        remainingQueryForVehicles = remainingQueryForVehicles.replace(model.toLowerCase(), ' ');
         break;
       }
     }
@@ -63,29 +67,34 @@ router.post('/search', async (req, res) => {
     // 3. Extract Categories using exact DB matches and synonyms
     const dbCategories = categoriesDB.map(c => c.name);
     
+    // Build a flat list of all synonyms with their target category, sorted by length descending
+    let allSynonyms = [];
     for (const cat of dbCategories) {
-      let isMatch = false;
+       allSynonyms.push({ phrase: cat.toLowerCase(), category: cat });
+       if (CATEGORY_SYNONYMS[cat]) {
+         for (const syn of CATEGORY_SYNONYMS[cat]) {
+           allSynonyms.push({ phrase: syn.toLowerCase(), category: cat });
+         }
+       }
+    }
+    
+    // Sort by length descending to match longest phrases first (e.g. "brake oil" before "brake" or "oil")
+    allSynonyms.sort((a, b) => b.phrase.length - a.phrase.length);
+
+    let remainingQuery = lowerQuery;
+    
+    for (const item of allSynonyms) {
+      // Use word boundaries to avoid partial word matches
+      const escapedPhrase = item.phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedPhrase}\\b`, 'i');
       
-      // Check exact match
-      if (lowerQuery.includes(cat.toLowerCase())) {
-        isMatch = true;
-      } else {
-        // Check synonyms
-        const synonyms = CATEGORY_SYNONYMS[cat];
-        if (synonyms) {
-          for (const syn of synonyms) {
-            // Use regex boundaries to match exact words (e.g. avoid matching "coil" for "oil")
-            const regex = new RegExp(`\\b${syn}\\b`, 'i');
-            if (regex.test(lowerQuery)) {
-              isMatch = true;
-              break;
-            }
-          }
+      if (regex.test(remainingQuery)) {
+        if (!matchedCategories.includes(item.category)) {
+          matchedCategories.push(item.category);
         }
-      }
-      
-      if (isMatch) {
-        matchedCategories.push(cat);
+        // Remove the matched phrase from the remaining query so its individual words aren't matched again
+        // Example: if "brake oil" is matched, we remove it, so "brake" and "oil" don't trigger Brake Pads or Engine Oil.
+        remainingQuery = remainingQuery.replace(regex, ' ');
       }
     }
 
