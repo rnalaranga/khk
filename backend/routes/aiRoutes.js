@@ -131,12 +131,12 @@ router.post('/search', async (req, res) => {
       sql += ` AND (`;
       const conditions = [];
       if (parsedIntent.make) {
-        conditions.push(`v.make LIKE ?`);
-        params.push(`%${parsedIntent.make}%`);
+        conditions.push(`(v.make LIKE ? OR p.name LIKE ? OR p.description LIKE ? OR p.compatible_vehicles LIKE ?)`);
+        params.push(`%${parsedIntent.make}%`, `%${parsedIntent.make}%`, `%${parsedIntent.make}%`, `%${parsedIntent.make}%`);
       }
       if (parsedIntent.model) {
-        conditions.push(`v.model LIKE ?`);
-        params.push(`%${parsedIntent.model}%`);
+        conditions.push(`(v.model LIKE ? OR p.name LIKE ? OR p.description LIKE ? OR p.compatible_vehicles LIKE ?)`);
+        params.push(`%${parsedIntent.model}%`, `%${parsedIntent.model}%`, `%${parsedIntent.model}%`, `%${parsedIntent.model}%`);
       }
       sql += conditions.join(' AND ');
       sql += `)`;
