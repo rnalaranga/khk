@@ -1,11 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Layers, ShoppingCart, User } from 'lucide-react';
+import { Home, Layers, ShoppingCart, User, Sparkles } from 'lucide-react';
 
-export default function MobileBottomNav({ user, cartCount }) {
+export default function MobileBottomNav({ user, cartCount, onOpenAI }) {
   const location = useLocation();
 
-  // Hide bottom nav on admin panel
   if (location.pathname.startsWith('/admin')) return null;
 
   return (
@@ -19,6 +18,30 @@ export default function MobileBottomNav({ user, cartCount }) {
         <Layers size={22} />
         <span>Categories</span>
       </Link>
+
+      {/* Center AI Agent Button */}
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+        <button 
+          onClick={onOpenAI}
+          style={{
+            width: 56, 
+            height: 56, 
+            borderRadius: '50%', 
+            background: 'linear-gradient(135deg, var(--red), #ff4d4d)',
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            color: 'white', 
+            border: '4px solid var(--bg-body)',
+            boxShadow: '0 -4px 16px rgba(228, 0, 15, 0.3)', 
+            marginTop: -24, 
+            zIndex: 10, 
+            cursor: 'pointer'
+          }}
+        >
+          <Sparkles size={24} />
+        </button>
+      </div>
 
       <Link to="/cart" className={`bottom-nav-item ${location.pathname === '/cart' ? 'active' : ''}`}>
         <div style={{ position: 'relative' }}>

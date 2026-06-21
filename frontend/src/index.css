@@ -1087,6 +1087,7 @@ option {
     z-index: 2000;
   }
   .bottom-nav-item {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1252,7 +1253,7 @@ option {
 }
 .floating-whatsapp {
   position: fixed;
-  bottom: 30px;
+  bottom: 100px;
   right: 30px;
   background: var(--red-dark);
   color: #fff;

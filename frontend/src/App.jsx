@@ -12,6 +12,7 @@ import ResetPassword from './pages/ResetPassword';
 import Account from './pages/Account';
 import AdminPanel from './pages/AdminPanel';
 import MobileBottomNav from './components/MobileBottomNav';
+import AIChat from './components/AIChat';
 import { MessageCircle } from 'lucide-react';
 
 // Products are now fetched from backend
@@ -96,6 +97,7 @@ export default function App() {
   });
   const [user, setUser]           = useState(null);
   const [bumpCart, setBumpCart]   = useState(false);
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const toastId = useRef(0);
 
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, onCancel: null });
@@ -266,7 +268,8 @@ export default function App() {
           <MessageCircle size={28} />
           <div className="floating-whatsapp-tooltip">Chat with us!</div>
         </a>
-        <MobileBottomNav user={user} cartCount={cartCount} />
+        <AIChat onAddToCart={addToCart} categories={categories} isOpen={isAIChatOpen} setIsOpen={setIsAIChatOpen} />
+        <MobileBottomNav user={user} cartCount={cartCount} onOpenAI={() => setIsAIChatOpen(true)} />
         <ToastStack toasts={toasts} onDismiss={removeToast} />
         <ConfirmDialog {...confirmState} />
       </div>
