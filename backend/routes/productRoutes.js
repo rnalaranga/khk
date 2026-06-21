@@ -11,6 +11,15 @@ const sharp = require('sharp');
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
+// Helper to process and save an image buffer
+async function processImage(buffer) {
+  const filename = `${Date.now()}_${Math.random().toString(36).substr(2, 6)}.webp`;
+  await sharp(buffer)
+    .webp({ quality: 80 })
+    .toFile(path.join(__dirname, '../uploads', filename));
+  return filename;
+}
+
 // @route   GET /api/products
 // @desc    Get all products or filter by category
 // @access  Public
@@ -27,12 +36,25 @@ router.get('/', async (req, res) => {
 
     const [products] = await db.query(query, params);
     
-    // Fetch all product_vehicles mappings
-    const [mappings] = await db.query('SELECT product_id, vehicle_id FROM product_vehicles');
+    // Fetch all product_vehicles mappings WITH vehicle details
+    const [mappings] = await db.query(`
+      SELECT pv.product_id, pv.vehicle_id, v.make, v.model, v.year_start, v.year_end
+      FROM product_vehicles pv
+      JOIN vehicles v ON pv.vehicle_id = v.id
+    `);
     
-    // Attach vehicle_ids to each product
+    // Attach vehicle_ids and vehicle_names to each product
     products.forEach(p => {
-      p.vehicle_ids = mappings.filter(m => m.product_id === p.id).map(m => m.vehicle_id);
+      const productMappings = mappings.filter(m => m.product_id === p.id);
+      p.vehicle_ids = productMappings.map(m => m.vehicle_id);
+      p.vehicle_names = productMappings.map(m => {
+        let name = `${m.make} ${m.model}`;
+        if (m.year_start && m.year_end) name += ` (${m.year_start}-${m.year_end})`;
+        else if (m.year_start) name += ` (${m.year_start}+)`;
+        return name;
+      });
+      // Build images array from image_url, image_url_2, image_url_3
+      p.images = [p.image_url, p.image_url_2, p.image_url_3].filter(Boolean);
     });
 
     res.json(products);
@@ -53,7 +75,10 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    res.json(product[0]);
+    const p = product[0];
+    p.images = [p.image_url, p.image_url_2, p.image_url_3].filter(Boolean);
+
+    res.json(p);
   } catch (error) {
     console.error('Error fetching product:', error);
     res.status(500).json({ message: 'Server Error' });
@@ -63,7 +88,7 @@ router.get('/:id', async (req, res) => {
 // @route   POST /api/products
 // @desc    Create a product (Admin only)
 // @access  Private Admin
-router.post('/', adminAuth, upload.single('image'), async (req, res) => {
+router.post('/', adminAuth, upload.array('images', 3), async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
@@ -71,13 +96,12 @@ router.post('/', adminAuth, upload.single('image'), async (req, res) => {
     const { name, category, price, discount_percent, stock, description } = req.body;
     let { vehicle_ids } = req.body;
     
-    let imageUrl = null;
-    if (req.file) {
-      const filename = `${Date.now()}.webp`;
-      await sharp(req.file.buffer)
-        .webp({ quality: 80 })
-        .toFile(path.join(__dirname, '../uploads', filename));
-      imageUrl = filename;
+    // Process up to 3 images
+    let imageUrl = null, imageUrl2 = null, imageUrl3 = null;
+    if (req.files && req.files.length > 0) {
+      imageUrl = await processImage(req.files[0].buffer);
+      if (req.files.length > 1) imageUrl2 = await processImage(req.files[1].buffer);
+      if (req.files.length > 2) imageUrl3 = await processImage(req.files[2].buffer);
     }
 
     if (!name || !price) {
@@ -94,8 +118,8 @@ router.post('/', adminAuth, upload.single('image'), async (req, res) => {
     }
 
     const [productRes] = await conn.query(
-      'INSERT INTO products (name, category, price, discount_percent, stock, image_url, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, category || null, price, discount_percent || 0, stock || 0, imageUrl, description || null]
+      'INSERT INTO products (name, category, price, discount_percent, stock, image_url, image_url_2, image_url_3, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, category || null, price, discount_percent || 0, stock || 0, imageUrl, imageUrl2, imageUrl3, description || null]
     );
 
     const productId = productRes.insertId;
@@ -119,21 +143,20 @@ router.post('/', adminAuth, upload.single('image'), async (req, res) => {
 // @route   PUT /api/products/:id
 // @desc    Update a product (Admin only)
 // @access  Private Admin
-router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
+router.put('/:id', adminAuth, upload.array('images', 3), async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
     const { id } = req.params;
     const { name, category, price, discount_percent, stock, description } = req.body;
-    let { vehicle_ids } = req.body;
+    let { vehicle_ids, remove_image_2, remove_image_3 } = req.body;
     
-    let imageUrl = null;
-    if (req.file) {
-      const filename = `${Date.now()}.webp`;
-      await sharp(req.file.buffer)
-        .webp({ quality: 80 })
-        .toFile(path.join(__dirname, '../uploads', filename));
-      imageUrl = filename;
+    // Process new images if uploaded
+    let newImages = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        newImages.push(await processImage(file.buffer));
+      }
     }
 
     if (vehicle_ids && typeof vehicle_ids === 'string') {
@@ -147,9 +170,26 @@ router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
     let query = 'UPDATE products SET name=?, category=?, price=?, discount_percent=?, stock=?, description=?';
     let params = [name, category || null, price, discount_percent || 0, stock || 0, description || null];
 
-    if (imageUrl) {
+    // Handle images: if new images uploaded, replace accordingly
+    if (newImages.length > 0) {
       query += ', image_url=?';
-      params.push(imageUrl);
+      params.push(newImages[0]);
+      if (newImages.length > 1) {
+        query += ', image_url_2=?';
+        params.push(newImages[1]);
+      }
+      if (newImages.length > 2) {
+        query += ', image_url_3=?';
+        params.push(newImages[2]);
+      }
+    }
+
+    // Handle removal of individual images
+    if (remove_image_2 === 'true') {
+      query += ', image_url_2=NULL';
+    }
+    if (remove_image_3 === 'true') {
+      query += ', image_url_3=NULL';
     }
     
     query += ' WHERE id=?';

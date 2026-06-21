@@ -32,9 +32,13 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected, cat
     cvLower.includes(vehicleSelected.make.toLowerCase())
   );
 
-  const imageSrc = product.image_url 
-    ? `/api/uploads/${product.image_url}` 
-    : (product.image || CAT_IMAGE[product.category] || '/prod_oil.png');
+  const imageSrc = (product.images && product.images.length > 0)
+    ? `/api/uploads/${product.images[0]}`
+    : (product.image_url ? `/api/uploads/${product.image_url}` : (product.image || CAT_IMAGE[product.category] || '/prod_oil.png'));
+
+  const vehicleDisplay = product.vehicle_names && product.vehicle_names.length > 0
+    ? product.vehicle_names.join(', ')
+    : product.compatible_vehicles;
 
   const handleAdd = () => {
     if (product.stock === 0 || added) return;
@@ -67,9 +71,9 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected, cat
       <div className="pcard-body">
         <div className="pcard-cat">{product.category}</div>
         <h3 className="pcard-name">{product.name}</h3>
-        {product.compatible_vehicles && (
-          <p className="pcard-compat" title={product.compatible_vehicles}>
-            {product.compatible_vehicles}
+        {vehicleDisplay && (
+          <p className="pcard-compat" title={vehicleDisplay}>
+            🚗 {vehicleDisplay}
           </p>
         )}
 

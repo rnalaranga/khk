@@ -29,7 +29,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const [orderItems, setOrderItems] = useState([]);
   const ORDERS_PER_PAGE = 5;
   
-  const [form, setForm] = useState({ name: '', category: '', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], image: null });
+  const [form, setForm] = useState({ name: '', category: '', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], images: [] });
   const [vForm, setVForm] = useState({ make: '', model: '', year_start: '', year_end: '' });
   const [cForm, setCForm] = useState({ name: '', discount_percent: '', image: null });
 
@@ -71,8 +71,10 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       formData.append('stock', form.stock);
       formData.append('description', form.description);
       formData.append('vehicle_ids', JSON.stringify(form.vehicle_ids));
-      if (form.image) {
-        formData.append('image', form.image);
+      if (form.images && form.images.length > 0) {
+        form.images.forEach(img => {
+          if (img instanceof File) formData.append('images', img);
+        });
       }
 
       const method = editingProductId ? 'PUT' : 'POST';
@@ -85,7 +87,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       });
       if (res.ok) {
         addToast(editingProductId ? 'Product updated!' : 'Product added!', 'success');
-        setForm({ name: '', category: categories.length > 0 ? categories[0].name : 'Engine Oil', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], image: null });
+        setForm({ name: '', category: categories.length > 0 ? categories[0].name : 'Engine Oil', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], images: [] });
         setEditingProductId(null);
         const fileInput = document.getElementById('product-image-upload');
         if (fileInput) fileInput.value = '';
@@ -104,7 +106,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       stock: p.stock,
       description: p.description || '',
       vehicle_ids: p.vehicle_ids || [],
-      image: null
+      images: []
     });
     setTab('add_product');
   };
@@ -287,7 +289,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
         <button onClick={() => setTab('dashboard')} className={tab === 'dashboard' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Activity size={18} /> Dashboard</button>
         <button onClick={() => setTab('orders')} className={tab === 'orders' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Server size={18} /> View Orders</button>
         <button onClick={() => setTab('products')} className={tab === 'products' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Package size={18} /> Manage Products</button>
-        <button onClick={() => { setTab('add_product'); setEditingProductId(null); setForm({ name: '', category: categories.length > 0 ? categories[0].name : '', price: '', stock: '', description: '', vehicle_ids: [], image: null }); }} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Plus size={18} /> Add Product</button>
+        <button onClick={() => { setTab('add_product'); setEditingProductId(null); setForm({ name: '', category: categories.length > 0 ? categories[0].name : '', price: '', stock: '', description: '', vehicle_ids: [], images: [] }); }} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Plus size={18} /> Add Product</button>
         <button onClick={() => setTab('categories')} className={tab === 'categories' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><PackageOpen size={18} /> Categories</button>
         <button onClick={() => setTab('vehicles')} className={tab === 'vehicles' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Car size={18} /> Vehicles</button>
         <button onClick={() => setTab('customers')} className={tab === 'customers' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Users size={18} /> Customers</button>
@@ -424,14 +426,29 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                 <textarea className="form-input" rows="3" placeholder="Product details..." value={form.description} onChange={e => updateForm('description', e.target.value)}></textarea>
               </div>
               <div className="form-group">
-                <label className="form-label">Product Image</label>
+                <label className="form-label">Product Images (up to 3)</label>
                 <input 
                   type="file" 
                   id="product-image-upload"
                   className="form-input" 
                   accept="image/*"
-                  onChange={e => updateForm('image', e.target.files[0])} 
+                  multiple
+                  onChange={e => {
+                    const files = Array.from(e.target.files).slice(0, 3);
+                    updateForm('images', files);
+                  }} 
                 />
+                <p style={{ color: 'var(--muted)', fontSize: '0.8rem', marginTop: 4 }}>Select up to 3 images. First image will be the main thumbnail.</p>
+                {form.images && form.images.length > 0 && (
+                  <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                    {form.images.map((img, i) => (
+                      <div key={i} style={{ position: 'relative', width: 70, height: 70, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                        <img src={img instanceof File ? URL.createObjectURL(img) : `/api/uploads/${img}`} alt={`Preview ${i+1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <span style={{ position: 'absolute', top: 2, left: 4, background: 'var(--red)', color: '#fff', fontSize: '0.6rem', padding: '1px 4px', borderRadius: 4 }}>{i === 0 ? 'Main' : `#${i+1}`}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>Compatible Vehicles <AlertCircle size={14} style={{ color: 'var(--muted)' }} /></label>

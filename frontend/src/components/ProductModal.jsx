@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Check, X } from 'lucide-react';
+import { ShoppingCart, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const CAT_IMAGE = {
   'Engine Oil': '/prod_oil.png',
@@ -14,6 +14,7 @@ const CAT_IMAGE = {
 
 export default function ProductModal({ isOpen, onClose, product, onAddToCart, vehicleSelected, categories = [] }) {
   const [added, setAdded] = useState(false);
+  const [activeImg, setActiveImg] = useState(0);
 
   if (!product) return null;
 
@@ -26,9 +27,16 @@ export default function ProductModal({ isOpen, onClose, product, onAddToCart, ve
     ? Math.round(product.price * (1 - bestDiscount / 100))
     : product.price;
 
-  const imageSrc = product.image_url 
-    ? `/api/uploads/${product.image_url}` 
-    : (product.image || CAT_IMAGE[product.category] || '/prod_oil.png');
+  // Build images array
+  const allImages = (product.images && product.images.length > 0)
+    ? product.images.map(img => `/api/uploads/${img}`)
+    : product.image_url 
+      ? [`/api/uploads/${product.image_url}`]
+      : [product.image || CAT_IMAGE[product.category] || '/prod_oil.png'];
+
+  const vehicleDisplay = product.vehicle_names && product.vehicle_names.length > 0
+    ? product.vehicle_names
+    : product.compatible_vehicles ? product.compatible_vehicles.split(',').map(v => v.trim()) : [];
 
   const handleAdd = () => {
     if (product.stock === 0 || added) return;
@@ -39,16 +47,47 @@ export default function ProductModal({ isOpen, onClose, product, onAddToCart, ve
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={onClose}>
-      <div style={{ background: 'var(--bg-body)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 800, width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: 'var(--shadow)' }} onClick={e => e.stopPropagation()}>
+      <div style={{ background: 'var(--bg-body)', border: '1px solid var(--border)', borderRadius: 16, maxWidth: 850, width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: 'var(--shadow)' }} onClick={e => e.stopPropagation()}>
         
         <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'var(--glass-bg)', border: '1px solid var(--border)', color: 'var(--white)', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}>
           <X size={20} />
         </button>
 
         <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-          {/* Image */}
-          <div style={{ flex: '1 1 300px', padding: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)' }}>
-            <img src={imageSrc} alt={product.name} style={{ maxWidth: '100%', maxHeight: 300, objectFit: 'contain' }} />
+          {/* Image Gallery */}
+          <div style={{ flex: '1 1 320px', padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 280 }}>
+              {allImages.length > 1 && (
+                <button onClick={() => setActiveImg(prev => prev === 0 ? allImages.length - 1 : prev - 1)} style={{ position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)', background: 'var(--glass-bg)', border: '1px solid var(--border)', color: 'var(--white)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}>
+                  <ChevronLeft size={16} />
+                </button>
+              )}
+              <img src={allImages[activeImg]} alt={product.name} style={{ maxWidth: '85%', maxHeight: 280, objectFit: 'contain', borderRadius: 8 }} />
+              {allImages.length > 1 && (
+                <button onClick={() => setActiveImg(prev => prev === allImages.length - 1 ? 0 : prev + 1)} style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', background: 'var(--glass-bg)', border: '1px solid var(--border)', color: 'var(--white)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}>
+                  <ChevronRight size={16} />
+                </button>
+              )}
+            </div>
+            {/* Thumbnails */}
+            {allImages.length > 1 && (
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                {allImages.map((img, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setActiveImg(i)}
+                    style={{
+                      width: 56, height: 56, borderRadius: 8, overflow: 'hidden', cursor: 'pointer',
+                      border: activeImg === i ? '2px solid var(--red)' : '2px solid var(--border)',
+                      opacity: activeImg === i ? 1 : 0.6,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <img src={img} alt={`Thumb ${i+1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           {/* Details */}
@@ -73,10 +112,16 @@ export default function ProductModal({ isOpen, onClose, product, onAddToCart, ve
               </p>
             </div>
 
-            {product.compatible_vehicles && (
-              <div>
-                <h4 style={{ color: 'var(--white)', margin: '0 0 8px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>Compatible Vehicles</h4>
-                <p style={{ color: 'var(--muted)', fontSize: '0.9rem', margin: 0 }}>{product.compatible_vehicles}</p>
+            {vehicleDisplay.length > 0 && (
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 8, border: '1px solid var(--border)' }}>
+                <h4 style={{ color: 'var(--white)', margin: '0 0 8px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>🚗 Compatible Vehicles</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {vehicleDisplay.map((v, i) => (
+                    <span key={i} style={{ background: 'rgba(228,0,15,0.15)', color: 'var(--text)', padding: '4px 10px', borderRadius: 20, fontSize: '0.8rem', border: '1px solid rgba(228,0,15,0.3)' }}>
+                      {v}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
