@@ -30,16 +30,16 @@ router.post('/search', async (req, res) => {
     let matchedModel = null;
     let matchedCategories = [];
 
+    let remainingQuery = lowerQuery;
+    
     // 2. Extract Make and Model
     // Sort makes and models by length descending to match longest phrases first (e.g. "Land Rover" before "Rover")
     const makes = [...new Set(vehicles.map(v => v.make))].sort((a, b) => b.length - a.length);
     
-    let remainingQueryForVehicles = lowerQuery;
-    
     for (const make of makes) {
-      if (remainingQueryForVehicles.includes(make.toLowerCase())) {
+      if (remainingQuery.includes(make.toLowerCase())) {
         matchedMake = make;
-        remainingQueryForVehicles = remainingQueryForVehicles.replace(make.toLowerCase(), ' ');
+        remainingQuery = remainingQuery.replace(make.toLowerCase(), ' ');
         break;
       }
     }
@@ -52,14 +52,14 @@ router.post('/search', async (req, res) => {
     availableModels = [...new Set(availableModels)].sort((a, b) => b.length - a.length);
     
     for (const model of availableModels) {
-      if (remainingQueryForVehicles.includes(model.toLowerCase())) {
+      if (remainingQuery.includes(model.toLowerCase())) {
         matchedModel = model;
         // If we found a model but haven't found a make yet, automatically assign the make
         if (!matchedMake) {
           const v = vehicles.find(v => v.model === model);
           if (v) matchedMake = v.make;
         }
-        remainingQueryForVehicles = remainingQueryForVehicles.replace(model.toLowerCase(), ' ');
+        remainingQuery = remainingQuery.replace(model.toLowerCase(), ' ');
         break;
       }
     }
@@ -81,7 +81,6 @@ router.post('/search', async (req, res) => {
     // Sort by length descending to match longest phrases first (e.g. "brake oil" before "brake" or "oil")
     allSynonyms.sort((a, b) => b.phrase.length - a.phrase.length);
 
-    let remainingQuery = lowerQuery;
     
     for (const item of allSynonyms) {
       // Use word boundaries to avoid partial word matches
@@ -93,18 +92,24 @@ router.post('/search', async (req, res) => {
           matchedCategories.push(item.category);
         }
         // Remove the matched phrase from the remaining query so its individual words aren't matched again
-        // Example: if "brake oil" is matched, we remove it, so "brake" and "oil" don't trigger Brake Pads or Engine Oil.
         remainingQuery = remainingQuery.replace(regex, ' ');
       }
     }
 
+    // 4. Extract free-text keywords from leftover words
+    const stopWords = ['i', 'need', 'want', 'looking', 'for', 'give', 'me', 'some', 'the', 'a', 'an', 'is', 'my', 'car', 'can', 'you', 'find', 'show', 'buy', 'have', 'do', 'any', 'get', 'parts', 'part', 'please'];
+    const keywords = remainingQuery
+      .split(/[^a-z0-9]+/) // Split by non-alphanumeric (including spaces, punctuation)
+      .filter(w => w.length > 0 && !stopWords.includes(w));
+
     const parsedIntent = {
       make: matchedMake,
       model: matchedModel,
-      categories: matchedCategories
+      categories: matchedCategories,
+      keywords: keywords
     };
 
-    // 4. Base Query
+    // 5. Base Query
     let sql = `
       SELECT DISTINCT p.* 
       FROM products p 
@@ -136,8 +141,15 @@ router.post('/search', async (req, res) => {
       sql += `)`;
     }
 
+    if (parsedIntent.keywords && parsedIntent.keywords.length > 0) {
+      for (const kw of parsedIntent.keywords) {
+        sql += ` AND (p.name LIKE ? OR p.description LIKE ? OR p.compatible_vehicles LIKE ?)`;
+        params.push(`%${kw}%`, `%${kw}%`, `%${kw}%`);
+      }
+    }
+
     // If no specific filters were found, return empty array to prevent dumping everything
-    if (!parsedIntent.make && !parsedIntent.model && (!parsedIntent.categories || parsedIntent.categories.length === 0)) {
+    if (!parsedIntent.make && !parsedIntent.model && (!parsedIntent.categories || parsedIntent.categories.length === 0) && (!parsedIntent.keywords || parsedIntent.keywords.length === 0)) {
        return res.json({ intent: parsedIntent, products: [] });
     }
 
