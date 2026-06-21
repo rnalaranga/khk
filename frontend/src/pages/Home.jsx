@@ -230,7 +230,7 @@ export default function Home({ products, categories = [], onAddToCart, onOpenAI 
       {/* ── AI Agent Promo ── */}
       <div className="container" style={{ marginTop: 60, marginBottom: 40 }}>
         <div style={{
-          background: 'linear-gradient(135deg, rgba(228, 0, 15, 0.05), rgba(0, 0, 0, 0.4))',
+          background: 'var(--bg-card)',
           border: '1px solid var(--border)',
           borderRadius: 24,
           padding: '40px',
@@ -239,7 +239,8 @@ export default function Home({ products, categories = [], onAddToCart, onOpenAI 
           gap: 30,
           position: 'relative',
           overflow: 'hidden',
-          flexWrap: 'wrap'
+          flexWrap: 'wrap',
+          boxShadow: 'var(--shadow)'
         }}>
           {/* Decorative glow */}
           <div style={{ position:'absolute', top: '-50%', left: '-10%', width: 300, height: 300, background: 'var(--red)', filter: 'blur(100px)', opacity: 0.15, borderRadius: '50%' }} />

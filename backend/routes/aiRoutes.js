@@ -27,7 +27,7 @@ router.post('/search', async (req, res) => {
     }
 
     // 1. Call Gemini to extract intent
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: query }] }],
       systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
