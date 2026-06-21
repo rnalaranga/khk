@@ -252,7 +252,7 @@ export default function App() {
 
         <main style={{ flex: 1 }}>
           <Routes>
-            <Route path="/"        element={<Home products={products} categories={categories} onAddToCart={addToCart} />} />
+            <Route path="/"        element={<Home products={products} categories={categories} onAddToCart={addToCart} onOpenAI={() => setIsAIChatOpen(true)} />} />
             <Route path="/shop"    element={<Shop products={products} categories={categories} onAddToCart={addToCart} />} />
             <Route path="/cart"    element={<Cart cartItems={cartItems} onUpdateQty={updateQty} onRemove={removeFromCart} />} />
             <Route path="/checkout" element={<Checkout cartItems={cartItems} user={user} onOrderSuccess={() => { setCartItems([]); addToast('Order placed!', 'success'); }} addToast={addToast} />} />

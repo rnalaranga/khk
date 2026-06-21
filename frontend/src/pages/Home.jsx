@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, Droplets, Disc, SlidersHorizontal, FlaskConical, PackageOpen, Snowflake, ChevronDown, Truck, ShieldCheck, Lock, Settings } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Droplets, Disc, SlidersHorizontal, FlaskConical, PackageOpen, Snowflake, ChevronDown, Truck, ShieldCheck, Lock, Settings, Sparkles } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 
 const getCategoryIcon = (name) => {
@@ -53,7 +53,7 @@ const SLIDES = [
 
 
 
-export default function Home({ products, categories = [], onAddToCart }) {
+export default function Home({ products, categories = [], onAddToCart, onOpenAI }) {
   const [slide, setSlide] = useState(0);
   const [make, setMake] = useState('');
   const [model, setModel] = useState('');
@@ -223,6 +223,44 @@ export default function Home({ products, categories = [], onAddToCart }) {
                 <span className="cat-strip-name">{c.name}</span>
               </Link>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── AI Agent Promo ── */}
+      <div className="container" style={{ marginTop: 60, marginBottom: 40 }}>
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(228, 0, 15, 0.05), rgba(0, 0, 0, 0.4))',
+          border: '1px solid var(--border)',
+          borderRadius: 24,
+          padding: '40px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 30,
+          position: 'relative',
+          overflow: 'hidden',
+          flexWrap: 'wrap'
+        }}>
+          {/* Decorative glow */}
+          <div style={{ position:'absolute', top: '-50%', left: '-10%', width: 300, height: 300, background: 'var(--red)', filter: 'blur(100px)', opacity: 0.15, borderRadius: '50%' }} />
+          
+          <div style={{ background: 'linear-gradient(135deg, var(--red), #ff4d4d)', width: 80, height: 80, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 8px 32px rgba(228,0,15,0.4)' }}>
+             <Sparkles size={40} color="white" />
+          </div>
+          
+          <div style={{ flex: 1, zIndex: 1, minWidth: 280 }}>
+            <h2 style={{ fontSize: '2rem', fontFamily: 'var(--font-hero)', margin: '0 0 8px 0', color: 'var(--text-main)' }}>
+              Meet Your New AI Parts Assistant
+            </h2>
+            <p style={{ color: 'var(--text-sub)', fontSize: '1.1rem', margin: '0 0 20px 0', maxWidth: 650, lineHeight: 1.6 }}>
+              Not sure which part fits your car? Just tell us what you need! For example: <span style={{ color: 'var(--red)', fontWeight: '600' }}>"I need brake pads for a Toyota Corolla"</span>. Our intelligent assistant will find the exact match instantly.
+            </p>
+            <button 
+              onClick={onOpenAI}
+              className="btn-primary"
+            >
+              <Sparkles size={18} /> Try AI Assistant
+            </button>
           </div>
         </div>
       </div>
