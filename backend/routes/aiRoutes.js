@@ -99,7 +99,8 @@ router.post('/search', async (req, res) => {
     // 4. Extract free-text keywords from leftover words
     const stopWords = ['i', 'need', 'want', 'looking', 'for', 'give', 'me', 'some', 'the', 'a', 'an', 'is', 'my', 'car', 'can', 'you', 'find', 'show', 'buy', 'have', 'do', 'any', 'get', 'parts', 'part', 'please'];
     const keywords = remainingQuery
-      .split(/[^a-z0-9]+/) // Split by non-alphanumeric (including spaces, punctuation)
+      .split(/\s+/) // Split by spaces instead of all non-alphanumeric
+      .map(w => w.replace(/[^a-z0-9\-]/gi, '')) // Keep alphanumeric and hyphens
       .filter(w => w.length > 0 && !stopWords.includes(w));
 
     const parsedIntent = {
@@ -143,8 +144,19 @@ router.post('/search', async (req, res) => {
 
     if (parsedIntent.keywords && parsedIntent.keywords.length > 0) {
       for (const kw of parsedIntent.keywords) {
-        sql += ` AND (p.name LIKE ? OR p.description LIKE ? OR p.compatible_vehicles LIKE ?)`;
-        params.push(`%${kw}%`, `%${kw}%`, `%${kw}%`);
+        const kwNoHyphen = kw.replace(/-/g, '');
+        sql += ` AND (
+          p.name LIKE ? OR 
+          p.description LIKE ? OR 
+          p.compatible_vehicles LIKE ? OR 
+          REPLACE(p.name, '-', '') LIKE ? OR 
+          REPLACE(p.description, '-', '') LIKE ? OR
+          REPLACE(p.compatible_vehicles, '-', '') LIKE ?
+        )`;
+        params.push(
+          `%${kw}%`, `%${kw}%`, `%${kw}%`, 
+          `%${kwNoHyphen}%`, `%${kwNoHyphen}%`, `%${kwNoHyphen}%`
+        );
       }
     }
 
