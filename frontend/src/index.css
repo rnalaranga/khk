@@ -531,7 +531,15 @@ img { display: block; }
   top: 30%; right: 15%;
   animation: hd-spin 50s linear infinite;
 }
-@keyframes hd-spin { 100% { transform: rotate(360deg); } }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+@keyframes ai-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}@keyframes ai-tooltip {
+  0% { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
+}@keyframes hd-spin { 100% { transform: rotate(360deg); } }
 @keyframes hd-spin-rev { 100% { transform: rotate(-360deg); } }
 .hot-deals-banner {
   background: linear-gradient(135deg, #e4000f 0%, #9c1c15 100%);

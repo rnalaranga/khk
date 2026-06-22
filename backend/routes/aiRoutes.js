@@ -110,17 +110,49 @@ router.post('/search', async (req, res) => {
       keywords: keywords
     };
 
-    // 5. Base Query
+    // 5. Build Relevance Score & Base Query
+    let relevanceExpr = '0';
+    let relevanceParams = [];
+
+    if (parsedIntent.keywords && parsedIntent.keywords.length > 0) {
+      for (const kw of parsedIntent.keywords) {
+        const kwNoHyphen = kw.replace(/-/g, '');
+        relevanceExpr += ` + 
+          (CASE WHEN p.name LIKE ? THEN 10 ELSE 0 END) +
+          (CASE WHEN REPLACE(p.name, '-', '') LIKE ? THEN 10 ELSE 0 END) +
+          (CASE WHEN p.description LIKE ? THEN 2 ELSE 0 END) +
+          (CASE WHEN REPLACE(p.description, '-', '') LIKE ? THEN 2 ELSE 0 END) +
+          (CASE WHEN p.compatible_vehicles LIKE ? THEN 5 ELSE 0 END) +
+          (CASE WHEN REPLACE(p.compatible_vehicles, '-', '') LIKE ? THEN 5 ELSE 0 END)
+        `;
+        relevanceParams.push(
+          `%${kw}%`, `%${kwNoHyphen}%`,
+          `%${kw}%`, `%${kwNoHyphen}%`,
+          `%${kw}%`, `%${kwNoHyphen}%`
+        );
+      }
+    }
+
+    if (parsedIntent.make) {
+        relevanceExpr += ` + (CASE WHEN p.name LIKE ? THEN 20 ELSE 0 END)`;
+        relevanceParams.push(`%${parsedIntent.make}%`);
+    }
+    if (parsedIntent.model) {
+        relevanceExpr += ` + (CASE WHEN p.name LIKE ? THEN 20 ELSE 0 END)`;
+        relevanceParams.push(`%${parsedIntent.model}%`);
+    }
+
     let sql = `
-      SELECT DISTINCT p.* 
+      SELECT p.id, p.name, p.price, p.stock, p.category, p.description, p.compatible_vehicles, p.image_url, p.image_url_2, p.image_url_3,
+      MAX(${relevanceExpr}) as relevance
       FROM products p 
       LEFT JOIN product_vehicles pv ON p.id = pv.product_id 
       LEFT JOIN vehicles v ON pv.vehicle_id = v.id 
       WHERE 1=1
     `;
-    const params = [];
+    const params = [...relevanceParams];
 
-    // 5. Apply Filters
+    // 6. Apply Hard Filters
     if (parsedIntent.categories && parsedIntent.categories.length > 0) {
       const placeholders = parsedIntent.categories.map(() => '?').join(',');
       sql += ` AND p.category IN (${placeholders})`;
@@ -142,26 +174,22 @@ router.post('/search', async (req, res) => {
       sql += `)`;
     }
 
-    if (parsedIntent.keywords && parsedIntent.keywords.length > 0) {
-      for (const kw of parsedIntent.keywords) {
-        const kwNoHyphen = kw.replace(/-/g, '');
-        sql += ` AND (
-          p.name LIKE ? OR 
-          p.description LIKE ? OR 
-          p.compatible_vehicles LIKE ? OR 
-          REPLACE(p.name, '-', '') LIKE ? OR 
-          REPLACE(p.description, '-', '') LIKE ? OR
-          REPLACE(p.compatible_vehicles, '-', '') LIKE ?
-        )`;
-        params.push(
-          `%${kw}%`, `%${kw}%`, `%${kw}%`, 
-          `%${kwNoHyphen}%`, `%${kwNoHyphen}%`, `%${kwNoHyphen}%`
-        );
-      }
+    // Group By
+    sql += ` GROUP BY p.id`;
+
+    // Having Clause for keywords
+    // If user ONLY typed keywords (no make, no model, no category), we MUST have relevance > 0 to not return all products
+    const hasHardFilters = (parsedIntent.categories.length > 0 || parsedIntent.make || parsedIntent.model);
+    if (!hasHardFilters && parsedIntent.keywords.length > 0) {
+      sql += ` HAVING relevance > 0`;
     }
 
-    // If no specific filters were found, return empty array to prevent dumping everything
-    if (!parsedIntent.make && !parsedIntent.model && (!parsedIntent.categories || parsedIntent.categories.length === 0) && (!parsedIntent.keywords || parsedIntent.keywords.length === 0)) {
+    // Order by Relevance
+    sql += ` ORDER BY relevance DESC, p.name ASC`;
+    sql += ` LIMIT 15`; // Don't overwhelm the chat with too many products
+
+    // If no specific filters were found at all, return empty array
+    if (!hasHardFilters && (!parsedIntent.keywords || parsedIntent.keywords.length === 0)) {
        return res.json({ intent: parsedIntent, products: [] });
     }
 
