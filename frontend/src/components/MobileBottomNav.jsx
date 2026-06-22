@@ -23,7 +23,7 @@ export default function MobileBottomNav({ user, cartCount, onOpenAI }) {
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', position: 'relative' }}>
         <div style={{
           position: 'absolute',
-          top: -45,
+          top: -55,
           background: 'var(--red)',
           color: 'white',
           padding: '4px 10px',
