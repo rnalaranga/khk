@@ -116,19 +116,19 @@ router.post('/search', async (req, res) => {
 
     if (parsedIntent.keywords && parsedIntent.keywords.length > 0) {
       for (const kw of parsedIntent.keywords) {
-        const kwNoHyphen = kw.replace(/-/g, '');
+        const kwClean = kw.replace(/[- ]/g, '');
         relevanceExpr += ` + 
           (CASE WHEN p.name LIKE ? THEN 10 ELSE 0 END) +
-          (CASE WHEN REPLACE(p.name, '-', '') LIKE ? THEN 10 ELSE 0 END) +
+          (CASE WHEN REPLACE(REPLACE(p.name, '-', ''), ' ', '') LIKE ? THEN 10 ELSE 0 END) +
           (CASE WHEN p.description LIKE ? THEN 2 ELSE 0 END) +
-          (CASE WHEN REPLACE(p.description, '-', '') LIKE ? THEN 2 ELSE 0 END) +
+          (CASE WHEN REPLACE(REPLACE(p.description, '-', ''), ' ', '') LIKE ? THEN 2 ELSE 0 END) +
           (CASE WHEN p.compatible_vehicles LIKE ? THEN 5 ELSE 0 END) +
-          (CASE WHEN REPLACE(p.compatible_vehicles, '-', '') LIKE ? THEN 5 ELSE 0 END)
+          (CASE WHEN REPLACE(REPLACE(p.compatible_vehicles, '-', ''), ' ', '') LIKE ? THEN 5 ELSE 0 END)
         `;
         relevanceParams.push(
-          `%${kw}%`, `%${kwNoHyphen}%`,
-          `%${kw}%`, `%${kwNoHyphen}%`,
-          `%${kw}%`, `%${kwNoHyphen}%`
+          `%${kw}%`, `%${kwClean}%`,
+          `%${kw}%`, `%${kwClean}%`,
+          `%${kw}%`, `%${kwClean}%`
         );
       }
     }
