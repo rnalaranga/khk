@@ -18,10 +18,21 @@ export default function Shop({ products, categories = [], onAddToCart }) {
     }
   }, [location.state]);
 
-  // Reset page when category or search changes
+  // Handle scroll and page resets
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchParams]);
+    if (location.state?.scrollToResults) {
+      setTimeout(() => {
+        const main = document.querySelector('.shop-main');
+        if (main) {
+           window.scrollTo({ top: main.offsetTop - 20, behavior: 'smooth' });
+        } else {
+           window.scrollTo({ top: 300, behavior: 'smooth' });
+        }
+      }, 100);
+      window.history.replaceState({}, document.title);
+    }
+  }, [searchParams, location.state]);
 
   const searchQ = searchParams.get('search') || '';
   

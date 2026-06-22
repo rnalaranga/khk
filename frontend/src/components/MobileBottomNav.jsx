@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Layers, ShoppingCart, User, Sparkles } from 'lucide-react';
 
-export default function MobileBottomNav({ user, cartCount, onOpenAI }) {
+export default function MobileBottomNav({ user, cartCount, onOpenAI, isAIChatOpen }) {
   const location = useLocation();
 
   if (location.pathname.startsWith('/admin')) return null;
@@ -21,34 +21,36 @@ export default function MobileBottomNav({ user, cartCount, onOpenAI }) {
 
       {/* Center AI Agent Button */}
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', position: 'relative' }}>
-        <div style={{
-          position: 'absolute',
-          top: -55,
-          background: 'var(--red)',
-          color: 'white',
-          padding: '4px 10px',
-          borderRadius: 16,
-          fontSize: '0.75rem',
-          fontWeight: 'bold',
-          whiteSpace: 'nowrap',
-          animation: 'ai-bounce 2s infinite, ai-tooltip 0.5s ease-out',
-          boxShadow: '0 4px 12px rgba(228, 0, 15, 0.4)',
-          pointerEvents: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 4
-        }}>
-          ✨ Ask AI
+        {!isAIChatOpen && (
           <div style={{
             position: 'absolute',
-            bottom: -4,
-            left: '50%',
-            transform: 'translateX(-50%) rotate(45deg)',
-            width: 8,
-            height: 8,
-            background: 'var(--red)'
-          }}></div>
-        </div>
+            top: -55,
+            background: 'var(--red)',
+            color: 'white',
+            padding: '4px 10px',
+            borderRadius: 16,
+            fontSize: '0.75rem',
+            fontWeight: 'bold',
+            whiteSpace: 'nowrap',
+            animation: 'ai-bounce 2s infinite, ai-tooltip 0.5s ease-out',
+            boxShadow: '0 4px 12px rgba(228, 0, 15, 0.4)',
+            pointerEvents: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4
+          }}>
+            ✨ Ask AI
+            <div style={{
+              position: 'absolute',
+              bottom: -4,
+              left: '50%',
+              transform: 'translateX(-50%) rotate(45deg)',
+              width: 8,
+              height: 8,
+              background: 'var(--red)'
+            }}></div>
+          </div>
+        )}
         <button 
           onClick={onOpenAI}
           style={{

@@ -76,21 +76,30 @@ export default function AIChat({ onAddToCart, categories, isOpen, setIsOpen }) {
       {!isOpen && (
         <div className="ai-chat-btn-container" style={{ position: 'fixed', bottom: 30, right: 30, zIndex: 9999, display: 'flex', alignItems: 'center', gap: 16 }}>
           <div className="ai-tooltip" style={{ 
-            background: 'var(--bg-card)', 
-            border: '1px solid var(--border)', 
-            padding: '10px 16px', 
-            borderRadius: 24, 
-            boxShadow: 'var(--shadow)',
-            color: 'var(--text-main)',
-            fontSize: '0.9rem',
-            fontWeight: 600,
+            position: 'relative',
+            background: 'var(--red)', 
+            padding: '8px 16px', 
+            borderRadius: 20, 
+            boxShadow: '0 4px 12px rgba(228, 0, 15, 0.4)',
+            color: 'white',
+            fontSize: '0.85rem',
+            fontWeight: 'bold',
             display: 'flex',
             alignItems: 'center',
             gap: 8,
             cursor: 'pointer',
-            animation: 'slideInRight 0.5s ease-out'
+            animation: 'ai-bounce 2s infinite, slideInRight 0.5s ease-out'
           }} onClick={() => setIsOpen(true)}>
-            <Sparkles size={16} color="var(--red)" /> Ask AI Assistant
+            <Sparkles size={16} color="white" /> Ask AI Assistant
+            <div style={{
+              position: 'absolute',
+              right: -4,
+              top: '50%',
+              transform: 'translateY(-50%) rotate(45deg)',
+              width: 8,
+              height: 8,
+              background: 'var(--red)'
+            }}></div>
           </div>
           <button 
             onClick={() => setIsOpen(true)}
@@ -180,7 +189,7 @@ export default function AIChat({ onAddToCart, categories, isOpen, setIsOpen }) {
                         key={p.id} 
                         onClick={() => {
                           setIsOpen(false);
-                          navigate(`/shop?search=${encodeURIComponent(p.name)}`);
+                          navigate(`/shop?search=${encodeURIComponent(p.name)}`, { state: { scrollToResults: true } });
                         }}
                         style={{ 
                           display: 'flex', 
@@ -210,23 +219,6 @@ export default function AIChat({ onAddToCart, categories, isOpen, setIsOpen }) {
                             Rs. {p.price.toLocaleString()}
                           </div>
                         </div>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); onAddToCart(p); }}
-                          style={{
-                            background: 'var(--bg-body)',
-                            color: 'var(--text-main)',
-                            border: '1px solid var(--border)',
-                            borderRadius: 8,
-                            padding: '6px 10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer'
-                          }}
-                          title="Search in Shop"
-                        >
-                          <Search size={16} />
-                        </button>
                       </div>
                     ))}
                   </div>

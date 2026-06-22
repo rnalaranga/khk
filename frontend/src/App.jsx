@@ -269,7 +269,7 @@ export default function App() {
           <div className="floating-whatsapp-tooltip">Chat with us!</div>
         </a>
         <AIChat onAddToCart={addToCart} categories={categories} isOpen={isAIChatOpen} setIsOpen={setIsAIChatOpen} />
-        <MobileBottomNav user={user} cartCount={cartCount} onOpenAI={() => setIsAIChatOpen(true)} />
+        <MobileBottomNav user={user} cartCount={cartCount} onOpenAI={() => setIsAIChatOpen(true)} isAIChatOpen={isAIChatOpen} />
         <ToastStack toasts={toasts} onDismiss={removeToast} />
         <ConfirmDialog {...confirmState} />
       </div>

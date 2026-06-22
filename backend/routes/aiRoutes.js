@@ -178,9 +178,10 @@ router.post('/search', async (req, res) => {
     sql += ` GROUP BY p.id`;
 
     // Having Clause for keywords
-    // If user ONLY typed keywords (no make, no model, no category), we MUST have relevance > 0 to not return all products
+    // If user provided keywords, enforce that the product must match at least one keyword (relevance > 0)
+    // This prevents returning all items in a category if the user asked for a specific item (e.g. "Green coolant 1 L")
     const hasHardFilters = (parsedIntent.categories.length > 0 || parsedIntent.make || parsedIntent.model);
-    if (!hasHardFilters && parsedIntent.keywords.length > 0) {
+    if (parsedIntent.keywords.length > 0) {
       sql += ` HAVING relevance > 0`;
     }
 
