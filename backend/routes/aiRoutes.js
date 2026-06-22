@@ -194,9 +194,16 @@ router.post('/search', async (req, res) => {
        return res.json({ intent: parsedIntent, products: [] });
     }
 
-    const [products] = await db.query(sql, params);
+    let [products] = await db.query(sql, params);
 
-    // 6. Attach vehicle names and format images (same as productRoutes.js)
+    // 7. Strict Filtering by Maximum Relevance
+    // If keywords were provided, only return the absolute most matching products to avoid flooding the user with partial matches
+    if (parsedIntent.keywords.length > 0 && products.length > 0) {
+      const maxRelevance = Math.max(...products.map(p => p.relevance));
+      products = products.filter(p => p.relevance === maxRelevance);
+    }
+
+    // 8. Attach vehicle names and format images (same as productRoutes.js)
     const productIds = products.map(p => p.id);
     if (productIds.length > 0) {
       const [mappings] = await db.query(`
