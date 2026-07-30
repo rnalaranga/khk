@@ -20,7 +20,8 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected, cat
   const categoryMatch = categories.find(c => c.name === product.category);
   const catDiscount = categoryMatch ? (categoryMatch.discount_percent || 0) : 0;
   const prodDiscount = product.discount_percent || 0;
-  const bestDiscount = Math.max(catDiscount, prodDiscount);
+  const brandDiscount = product.brand_discount || 0;
+  const bestDiscount = Math.max(catDiscount, prodDiscount, brandDiscount);
 
   const finalPrice = bestDiscount > 0
     ? Math.round(product.price * (1 - bestDiscount / 100))
@@ -69,7 +70,15 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected, cat
 
       {/* Body */}
       <div className="pcard-body">
-        <div className="pcard-cat">{product.category}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <div className="pcard-cat">{product.category}</div>
+          {product.brand_name && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {product.brand_logo && <img src={`/api/uploads/${product.brand_logo}`} alt={product.brand_name} style={{ height: 16, width: 16, objectFit: 'contain' }} />}
+              <span style={{ fontSize: '0.7rem', color: 'var(--muted)', fontWeight: 'bold' }}>{product.brand_name}</span>
+            </div>
+          )}
+        </div>
         <h3 className="pcard-name">{product.name}</h3>
         {vehicleDisplay && (
           <p className="pcard-compat" title={vehicleDisplay}>

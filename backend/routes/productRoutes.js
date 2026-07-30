@@ -26,11 +26,11 @@ async function processImage(buffer) {
 router.get('/', async (req, res) => {
   try {
     const { category } = req.query;
-    let query = 'SELECT * FROM products';
+    let query = 'SELECT p.*, b.name as brand_name, b.logo_url as brand_logo, b.discount_percent as brand_discount FROM products p LEFT JOIN brands b ON p.brand_id = b.id';
     const params = [];
 
     if (category) {
-      query += ' WHERE category = ?';
+      query += ' WHERE p.category = ?';
       params.push(category);
     }
 
@@ -69,7 +69,7 @@ router.get('/', async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
-    const [product] = await db.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
+    const [product] = await db.query('SELECT p.*, b.name as brand_name, b.logo_url as brand_logo, b.discount_percent as brand_discount FROM products p LEFT JOIN brands b ON p.brand_id = b.id WHERE p.id = ?', [req.params.id]);
     
     if (product.length === 0) {
       return res.status(404).json({ message: 'Product not found' });
@@ -93,7 +93,7 @@ router.post('/', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { nam
   try {
     await conn.beginTransaction();
 
-    const { name, category, price, discount_percent, stock, description } = req.body;
+    const { name, category, price, discount_percent, stock, description, brand_id } = req.body;
     let { vehicle_ids } = req.body;
     
     // Process up to 3 images
@@ -118,8 +118,8 @@ router.post('/', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { nam
     }
 
     const [productRes] = await conn.query(
-      'INSERT INTO products (name, category, price, discount_percent, stock, image_url, image_url_2, image_url_3, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, category || null, price, discount_percent || 0, stock || 0, imageUrl, imageUrl2, imageUrl3, description || null]
+      'INSERT INTO products (name, category, price, discount_percent, stock, image_url, image_url_2, image_url_3, description, brand_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, category || null, price, discount_percent || 0, stock || 0, imageUrl, imageUrl2, imageUrl3, description || null, brand_id || null]
     );
 
     const productId = productRes.insertId;
@@ -148,7 +148,7 @@ router.put('/:id', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { n
   try {
     await conn.beginTransaction();
     const { id } = req.params;
-    const { name, category, price, discount_percent, stock, description } = req.body;
+    const { name, category, price, discount_percent, stock, description, brand_id } = req.body;
     let { vehicle_ids, remove_image, remove_image_2, remove_image_3 } = req.body;
     
     // Process new images if uploaded
@@ -167,8 +167,8 @@ router.put('/:id', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { n
       }
     }
 
-    let query = 'UPDATE products SET name=?, category=?, price=?, discount_percent=?, stock=?, description=?';
-    let params = [name, category || null, price, discount_percent || 0, stock || 0, description || null];
+    let query = 'UPDATE products SET name=?, category=?, price=?, discount_percent=?, stock=?, description=?, brand_id=?';
+    let params = [name, category || null, price, discount_percent || 0, stock || 0, description || null, brand_id || null];
 
     // Handle image 1
     if (imageUrl) {

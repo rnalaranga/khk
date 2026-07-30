@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Package, PackageOpen, Server, AlertCircle, Edit, Trash2, Activity, Users, Car } from 'lucide-react';
+import { Plus, Package, PackageOpen, Server, AlertCircle, Edit, Trash2, Activity, Users, Car, Tag } from 'lucide-react';
 
 export default function AdminPanel({ user, addToast, showConfirm }) {
   const navigate = useNavigate();
@@ -10,6 +10,8 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [editingBrandId, setEditingBrandId] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -32,6 +34,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const [form, setForm] = useState({ name: '', category: '', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], image: null, image_2: null, image_3: null, existing_image: null, existing_image_2: null, existing_image_3: null, remove_image: false, remove_image_2: false, remove_image_3: false });
   const [vForm, setVForm] = useState({ make: '', model: '', year_start: '', year_end: '' });
   const [cForm, setCForm] = useState({ name: '', discount_percent: '', image: null });
+  const [bForm, setBForm] = useState({ name: '', discount_percent: '', image: null });
 
   const token = localStorage.getItem('token');
 
@@ -46,6 +49,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
     fetchOrders();
     fetchCustomers();
     fetchCategories();
+    fetchBrands();
   }, [user, navigate]);
 
   const fetchVehicles = () => fetch(`/api/vehicles`).then(res => res.json()).then(data => setVehicles(data)).catch(console.error);
@@ -53,6 +57,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const fetchOrders = () => fetch(`/api/orders/all`, { headers: { 'x-auth-token': token } }).then(res => res.json()).then(data => setOrders(data)).catch(console.error);
   const fetchCustomers = () => fetch(`/api/auth/users`, { headers: { 'x-auth-token': token } }).then(res => res.json()).then(data => setCustomers(data)).catch(console.error);
   const fetchCategories = () => fetch(`/api/categories`).then(res => res.json()).then(data => { setCategories(data); if (data.length > 0) setForm(f => ({ ...f, category: f.category || data[0].name })); }).catch(console.error);
+  const fetchBrands = () => fetch(`/api/brands`).then(res => res.json()).then(setBrands).catch(console.error);
 
   const updateForm = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updateVForm = (k, v) => setVForm(f => ({ ...f, [k]: v }));
@@ -70,6 +75,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       formData.append('discount_percent', form.discount_percent || 0);
       formData.append('stock', form.stock);
       formData.append('description', form.description);
+      formData.append('brand_id', form.brand_id || '');
       formData.append('vehicle_ids', JSON.stringify(form.vehicle_ids));
       if (form.image instanceof File) formData.append('image', form.image);
       if (form.image_2 instanceof File) formData.append('image_2', form.image_2);
@@ -88,7 +94,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       });
       if (res.ok) {
         addToast(editingProductId ? 'Product updated!' : 'Product added!', 'success');
-        setForm({ name: '', category: categories.length > 0 ? categories[0].name : 'Engine Oil', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], image: null, image_2: null, image_3: null, existing_image: null, existing_image_2: null, existing_image_3: null, remove_image: false, remove_image_2: false, remove_image_3: false });
+        setForm({ name: '', category: categories.length > 0 ? categories[0].name : 'Engine Oil', brand_id: '', price: '', discount_percent: '', stock: '', description: '', vehicle_ids: [], image: null, image_2: null, image_3: null, existing_image: null, existing_image_2: null, existing_image_3: null, remove_image: false, remove_image_2: false, remove_image_3: false });
         setEditingProductId(null);
         ['product-image-upload', 'product-image-upload-2', 'product-image-upload-3'].forEach(id => {
           const fileInput = document.getElementById(id);
@@ -104,6 +110,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
     setForm({
       name: p.name,
       category: p.category || 'Engine Oil',
+      brand_id: p.brand_id || '',
       price: p.price,
       discount_percent: p.discount_percent || '',
       stock: p.stock,
@@ -196,6 +203,55 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
       await fetch(`/api/categories/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
       fetchCategories();
     } catch (err) { addToast('Error deleting category', 'error'); }
+  };
+
+  const handleAddBrand = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('name', bForm.name);
+    formData.append('discount_percent', bForm.discount_percent || 0);
+    if (bForm.image) formData.append('image', bForm.image);
+
+    const method = editingBrandId ? 'PUT' : 'POST';
+    const url = editingBrandId ? `/api/brands/${editingBrandId}` : `/api/brands`;
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'x-auth-token': token },
+      body: formData
+    });
+    if (res.ok) {
+      addToast(editingBrandId ? 'Brand updated!' : 'Brand added!', 'success');
+      setBForm({ name: '', discount_percent: '', image: null });
+      setEditingBrandId(null);
+      const fileInput = document.getElementById('brand-image-upload');
+      if (fileInput) fileInput.value = '';
+      fetchBrands();
+    } else {
+      const data = await res.json();
+      addToast(data.message || 'Error saving brand', 'error');
+    }
+  };
+
+  const handleEditBrand = (b) => {
+    setEditingBrandId(b.id);
+    setBForm({
+      name: b.name,
+      discount_percent: b.discount_percent || '',
+      image: null
+    });
+    const fileInput = document.getElementById('brand-image-upload');
+    if (fileInput) fileInput.value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteBrand = async (id) => {
+    const confirmed = await showConfirm("Delete Brand", "Are you sure you want to delete this brand?");
+    if (!confirmed) return;
+    try {
+      await fetch(`/api/brands/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
+      fetchBrands();
+    } catch (err) { addToast('Error deleting brand', 'error'); }
   };
 
 
@@ -300,7 +356,8 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
         <button onClick={() => setTab('dashboard')} className={tab === 'dashboard' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Activity size={18} /> Dashboard</button>
         <button onClick={() => setTab('orders')} className={tab === 'orders' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Server size={18} /> View Orders</button>
         <button onClick={() => setTab('products')} className={tab === 'products' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Package size={18} /> Manage Products</button>
-        <button onClick={() => { setTab('add_product'); setEditingProductId(null); setForm({ name: '', category: categories.length > 0 ? categories[0].name : '', price: '', stock: '', description: '', vehicle_ids: [], image: null, image_2: null, image_3: null, existing_image: null, existing_image_2: null, existing_image_3: null, remove_image: false, remove_image_2: false, remove_image_3: false }); }} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Plus size={18} /> Add Product</button>
+        <button onClick={() => { setTab('add_product'); setEditingProductId(null); setForm({ name: '', category: categories.length > 0 ? categories[0].name : '', brand_id: '', price: '', stock: '', description: '', vehicle_ids: [], image: null, image_2: null, image_3: null, existing_image: null, existing_image_2: null, existing_image_3: null, remove_image: false, remove_image_2: false, remove_image_3: false }); }} className={tab === 'add_product' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Plus size={18} /> Add Product</button>
+        <button onClick={() => setTab('brands')} className={tab === 'brands' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Tag size={18} /> Brands</button>
         <button onClick={() => setTab('categories')} className={tab === 'categories' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><PackageOpen size={18} /> Categories</button>
         <button onClick={() => setTab('vehicles')} className={tab === 'vehicles' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Car size={18} /> Vehicles</button>
         <button onClick={() => setTab('customers')} className={tab === 'customers' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Users size={18} /> Customers</button>
@@ -423,6 +480,15 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                   <select className="form-input" value={form.category} onChange={e => updateForm('category', e.target.value)}>
                     {categories.map(c => (
                       <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">Brand</label>
+                  <select className="form-input" value={form.brand_id} onChange={e => updateForm('brand_id', e.target.value)}>
+                    <option value="">No Brand</option>
+                    {brands.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
                   </select>
                 </div>
@@ -724,6 +790,55 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {/* BRANDS TAB */}
+        {tab === 'brands' && (
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>{editingBrandId ? 'Edit Brand' : 'Add New Brand'}</h2>
+            <form onSubmit={handleAddBrand} style={{ display: 'flex', gap: 16, marginBottom: 32, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div className="form-group" style={{ marginBottom: 0, flex: 2 }}>
+                <label className="form-label">Brand Name</label>
+                <input required type="text" className="form-input" placeholder="Liqui Moly" value={bForm.name} onChange={e => setBForm({ ...bForm, name: e.target.value })} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
+                <label className="form-label">Discount (%)</label>
+                <input type="number" className="form-input" placeholder="0" value={bForm.discount_percent} onChange={e => setBForm({ ...bForm, discount_percent: e.target.value })} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0, flex: 2 }}>
+                <label className="form-label">Brand Logo (Optional)</label>
+                <input type="file" id="brand-image-upload" accept="image/*" className="form-input" onChange={e => setBForm({ ...bForm, image: e.target.files[0] })} style={{ padding: '7px 12px', fontSize: '0.9rem' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="submit" className="btn-primary" style={{ padding: '12px 24px' }}>{editingBrandId ? 'Update' : 'Add'}</button>
+                {editingBrandId && (
+                  <button type="button" className="btn-outline" onClick={() => { setEditingBrandId(null); setBForm({ name: '', discount_percent: '', image: null }); }} style={{ padding: '12px 24px' }}>Cancel</button>
+                )}
+              </div>
+            </form>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
+                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12, width: 80 }}>Logo</th><th style={{ padding: 12 }}>Brand Name</th><th style={{ padding: 12 }}>Discount</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
+                <tbody>
+                  {brands.map(b => (
+                    <tr key={b.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: 12 }}>
+                        {b.logo_url ? <img src={`/api/uploads/${b.logo_url}`} alt={b.name} style={{ width: 40, height: 40, objectFit: 'contain', background: 'rgba(255,255,255,0.1)', borderRadius: 4 }} /> : <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.1)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'var(--muted)' }}>No Logo</div>}
+                      </td>
+                      <td style={{ padding: 12 }}>{b.name}</td>
+                      <td style={{ padding: 12 }}>{b.discount_percent > 0 ? <span style={{ color: '#eab308' }}>{b.discount_percent}% OFF</span> : '-'}</td>
+                      <td style={{ padding: 12, display: 'flex', gap: 8, alignItems: 'center', height: 64 }}>
+                        <button onClick={() => handleEditBrand(b)} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer' }}><Edit size={18} /></button>
+                        <button onClick={() => handleDeleteBrand(b.id)} style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer' }}><Trash2 size={18} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                  {brands.length === 0 && <tr><td colSpan="4" style={{ padding: 20, textAlign: 'center', color: 'var(--muted)' }}>No brands found</td></tr>}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

@@ -152,10 +152,12 @@ router.post('/search', async (req, res) => {
 
     let sql = `
       SELECT p.id, p.name, p.price, p.stock, p.category, p.description, p.compatible_vehicles, p.image_url, p.image_url_2, p.image_url_3,
+      b.name as brand_name, b.logo_url as brand_logo, b.discount_percent as brand_discount,
       MAX(${relevanceExpr}) as relevance
       FROM products p 
       LEFT JOIN product_vehicles pv ON p.id = pv.product_id 
       LEFT JOIN vehicles v ON pv.vehicle_id = v.id 
+      LEFT JOIN brands b ON p.brand_id = b.id
       WHERE 1=1
     `;
     const params = [...relevanceParams];

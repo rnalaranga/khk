@@ -21,7 +21,8 @@ export default function ProductModal({ isOpen, onClose, product, onAddToCart, ve
   const categoryMatch = categories.find(c => c.name === product.category);
   const catDiscount = categoryMatch ? (categoryMatch.discount_percent || 0) : 0;
   const prodDiscount = product.discount_percent || 0;
-  const bestDiscount = Math.max(catDiscount, prodDiscount);
+  const brandDiscount = product.brand_discount || 0;
+  const bestDiscount = Math.max(catDiscount, prodDiscount, brandDiscount);
 
   const finalPrice = bestDiscount > 0
     ? Math.round(product.price * (1 - bestDiscount / 100))
@@ -93,7 +94,15 @@ export default function ProductModal({ isOpen, onClose, product, onAddToCart, ve
           {/* Details */}
           <div style={{ flex: '1 1 300px', padding: 32, display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-              <span style={{ color: 'var(--red)', textTransform: 'uppercase', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '0.05em' }}>{product.category}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <span style={{ color: 'var(--red)', textTransform: 'uppercase', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '0.05em' }}>{product.category}</span>
+                {product.brand_name && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: 12, border: '1px solid var(--border)' }}>
+                    {product.brand_logo && <img src={`/api/uploads/${product.brand_logo}`} alt={product.brand_name} style={{ height: 14, objectFit: 'contain' }} />}
+                    <span style={{ fontSize: '0.75rem', color: 'var(--white)', fontWeight: '600' }}>{product.brand_name}</span>
+                  </div>
+                )}
+              </div>
               <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '2rem', color: 'var(--white)', margin: '8px 0' }}>{product.name}</h2>
               {product.stock === 0 ? (
                 <span className="badge-sale" style={{ background: '#333' }}>OUT OF STOCK</span>
