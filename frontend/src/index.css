@@ -500,6 +500,18 @@ img { display: block; }
 }
 .cat-strip-item:hover .cat-strip-name { color: var(--white); }
 
+.home-cat-card:hover {
+  border-color: var(--red) !important;
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+.home-cat-card:hover img {
+  transform: scale(1.1);
+  transition: transform 0.3s ease;
+}
+.home-cat-card img {
+  transition: transform 0.3s ease;
+}
 /* ═══════════════════════════════
    SECTIONS
 ═══════════════════════════════ */

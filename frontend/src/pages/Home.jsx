@@ -213,19 +213,38 @@ export default function Home({ products, categories = [], onAddToCart, onOpenAI 
         </div>
       </div>
 
-      {/* ── Category Strip ── */}
-      <div className="category-strip">
+      {/* ── Shop by Category ── */}
+      <section className="section">
         <div className="container">
-          <div className="cat-strip-grid">
+          <div className="section-header">
+            <div className="section-title-wrap">
+              <div className="section-eyebrow">Find What You Need</div>
+              <h2 className="section-title">Shop by Category</h2>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '20px' }}>
             {categories.map(c => (
-              <Link to={`/shop?category=${encodeURIComponent(c.name)}`} key={c.id} className="cat-strip-item">
-                {getCategoryIcon(c.name)}
-                <span className="cat-strip-name">{c.name}</span>
+              <Link to={`/shop?category=${encodeURIComponent(c.name)}`} key={c.id} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--glass-bg)', border: '1px solid var(--border)', borderRadius: '16px',
+                padding: '24px', textDecoration: 'none', transition: 'all 0.3s ease'
+              }} className="home-cat-card">
+                {c.image_url ? (
+                  <img src={`/api/uploads/${c.image_url}`} alt={c.name} style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '16px' }} />
+                ) : (
+                  <div style={{ width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', marginBottom: '16px', color: 'var(--red)' }}>
+                    {getCategoryIcon(c.name)}
+                  </div>
+                )}
+                <span style={{ color: 'var(--white)', fontFamily: 'var(--font-hero)', fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center' }}>{c.name}</span>
+                {c.discount_percent > 0 && (
+                  <span style={{ color: '#eab308', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '8px', background: 'rgba(234, 179, 8, 0.1)', padding: '4px 10px', borderRadius: '12px' }}>{c.discount_percent}% OFF</span>
+                )}
               </Link>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
 
 
