@@ -101,7 +101,8 @@ router.post('/search', async (req, res) => {
     const keywords = remainingQuery
       .split(/\s+/) // Split by spaces instead of all non-alphanumeric
       .map(w => w.replace(/[^a-z0-9\-]/gi, '')) // Keep alphanumeric and hyphens
-      .filter(w => w.length > 0 && !stopWords.includes(w));
+      .filter(w => w.length > 0 && !stopWords.includes(w))
+      .map(w => (w.endsWith('s') && w.length > 3) ? w.slice(0, -1) : w); // simple singularization (e.g. pads -> pad)
 
     const parsedIntent = {
       make: matchedMake,
@@ -114,16 +115,23 @@ router.post('/search', async (req, res) => {
     let relevanceExpr = '0';
     let relevanceParams = [];
 
+    // Exact Phrase Bonus (Massive boost if the remaining query exactly matches a product name, ignoring spaces/hyphens)
+    const exactPhrase = remainingQuery.replace(/[^a-z0-9]/gi, '');
+    if (exactPhrase.length > 2) {
+        relevanceExpr += ` + (CASE WHEN REPLACE(REPLACE(p.name, '-', ''), ' ', '') LIKE ? THEN 100 ELSE 0 END)`;
+        relevanceParams.push(`%${exactPhrase}%`);
+    }
+
     if (parsedIntent.keywords && parsedIntent.keywords.length > 0) {
       for (const kw of parsedIntent.keywords) {
         const kwClean = kw.replace(/[- ]/g, '');
         relevanceExpr += ` + 
-          (CASE WHEN p.name LIKE ? THEN 10 ELSE 0 END) +
-          (CASE WHEN REPLACE(REPLACE(p.name, '-', ''), ' ', '') LIKE ? THEN 10 ELSE 0 END) +
-          (CASE WHEN p.description LIKE ? THEN 2 ELSE 0 END) +
-          (CASE WHEN REPLACE(REPLACE(p.description, '-', ''), ' ', '') LIKE ? THEN 2 ELSE 0 END) +
-          (CASE WHEN p.compatible_vehicles LIKE ? THEN 5 ELSE 0 END) +
-          (CASE WHEN REPLACE(REPLACE(p.compatible_vehicles, '-', ''), ' ', '') LIKE ? THEN 5 ELSE 0 END)
+          (CASE WHEN p.name LIKE ? THEN 15 ELSE 0 END) +
+          (CASE WHEN REPLACE(REPLACE(p.name, '-', ''), ' ', '') LIKE ? THEN 15 ELSE 0 END) +
+          (CASE WHEN p.description LIKE ? THEN 5 ELSE 0 END) +
+          (CASE WHEN REPLACE(REPLACE(p.description, '-', ''), ' ', '') LIKE ? THEN 5 ELSE 0 END) +
+          (CASE WHEN p.compatible_vehicles LIKE ? THEN 8 ELSE 0 END) +
+          (CASE WHEN REPLACE(REPLACE(p.compatible_vehicles, '-', ''), ' ', '') LIKE ? THEN 8 ELSE 0 END)
         `;
         relevanceParams.push(
           `%${kw}%`, `%${kwClean}%`,
