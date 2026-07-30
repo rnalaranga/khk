@@ -614,12 +614,16 @@ img { display: block; }
   font-family: var(--font-ui);
 }
 .cat-icon-badge {
-  flex-shrink: 0;
-  font-size: 0.68rem; font-weight: 800;
+  position: absolute;
+  top: 0; right: 0;
+  font-size: 0.7rem; font-weight: 800;
   color: #fff; background: var(--red);
-  padding: 3px 7px; border-radius: 20px;
+  padding: 4px 10px;
+  border-radius: 0 14px 0 12px;
   font-family: var(--font-hero);
   letter-spacing: 0.03em;
+  box-shadow: -2px 2px 10px rgba(0,0,0,0.15);
+  z-index: 5;
 }
 .cat-icon-arrow {
   color: var(--red); flex-shrink: 0;
