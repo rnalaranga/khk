@@ -35,15 +35,17 @@ export default function Shop({ products, categories = [], onAddToCart }) {
   }, [searchParams, location.state]);
 
   const searchQ = searchParams.get('search') || '';
+  const brandQ = searchParams.get('brand') || '';
   
   const filtered = products.filter(p => {
     const matchCat = cat ? p.category === cat : true;
+    const matchBrand = brandQ ? p.brand_name === brandQ : true;
     const matchSearch = searchQ 
       ? (p.name?.toLowerCase().includes(searchQ.toLowerCase()) || 
          p.description?.toLowerCase().includes(searchQ.toLowerCase()) ||
-         p.brand?.toLowerCase().includes(searchQ.toLowerCase()))
+         p.brand_name?.toLowerCase().includes(searchQ.toLowerCase()))
       : true;
-    return matchCat && matchSearch;
+    return matchCat && matchSearch && matchBrand;
   });
   
   const ITEMS_PER_PAGE = 12;
@@ -94,7 +96,7 @@ export default function Shop({ products, categories = [], onAddToCart }) {
             <div className="section-header" style={{ marginBottom:24 }}>
               <div>
                 <div className="section-eyebrow">Catalogue</div>
-                <h1 className="section-title">{cat || 'All Products'}</h1>
+                <h1 className="section-title">{brandQ ? `${brandQ} Products` : (cat || 'All Products')}</h1>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <span style={{ color:'var(--muted)', fontSize:'0.9rem', fontWeight:600 }}>

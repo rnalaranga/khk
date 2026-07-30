@@ -60,12 +60,14 @@ export default function Home({ products, categories = [], onAddToCart, onOpenAI 
   const [year, setYear] = useState('');
   const [vehicleSelected, setVehicleSelected] = useState(null);
   const [vehicles, setVehicles] = useState([]);
+  const [brands, setBrands] = useState([]);
   const dealsRef = useRef(null);
 
   // Auto-advance slider
   useEffect(() => {
     const timer = setInterval(() => setSlide(s => (s + 1) % SLIDES.length), 5000);
     fetch('/api/vehicles').then(res => res.json()).then(data => setVehicles(data)).catch(console.error);
+    fetch('/api/brands').then(res => res.json()).then(data => setBrands(data)).catch(console.error);
     return () => clearInterval(timer);
   }, []);
 
@@ -214,37 +216,94 @@ export default function Home({ products, categories = [], onAddToCart, onOpenAI 
       </div>
 
       {/* ── Shop by Category ── */}
-      <section className="section">
+      <section style={{ padding: '80px 0', background: 'var(--dark)' }}>
         <div className="container">
           <div className="section-header">
             <div className="section-title-wrap">
-              <div className="section-eyebrow">Find What You Need</div>
+              <div className="section-eyebrow">Browse the Range</div>
               <h2 className="section-title">Shop by Category</h2>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '20px' }}>
-            {categories.map(c => (
-              <Link to={`/shop?category=${encodeURIComponent(c.name)}`} key={c.id} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                background: 'var(--glass-bg)', border: '1px solid var(--border)', borderRadius: '16px',
-                padding: '24px', textDecoration: 'none', transition: 'all 0.3s ease'
-              }} className="home-cat-card">
-                {c.image_url ? (
-                  <img src={`/api/uploads/${c.image_url}`} alt={c.name} style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '16px' }} />
-                ) : (
-                  <div style={{ width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', marginBottom: '16px', color: 'var(--red)' }}>
-                    {getCategoryIcon(c.name)}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+            {categories.map(c => {
+              const prodCount = products.filter(p => p.category === c.name).length;
+              return (
+                <Link
+                  to={`/shop?category=${encodeURIComponent(c.name)}`}
+                  key={c.id}
+                  className="home-cat-card"
+                  style={{ textDecoration: 'none' }}
+                >
+                  <div style={{ position: 'relative', overflow: 'hidden' }}>
+                    {c.image_url ? (
+                      <div style={{ height: '140px', overflow: 'hidden', borderRadius: '12px 12px 0 0', background: 'rgba(255,255,255,0.03)' }}>
+                        <img src={`/api/uploads/${c.image_url}`} alt={c.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '16px', boxSizing: 'border-box' }} />
+                      </div>
+                    ) : (
+                      <div style={{ height: '140px', borderRadius: '12px 12px 0 0', background: 'linear-gradient(135deg, rgba(228,0,15,0.08) 0%, rgba(255,255,255,0.03) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)' }}>
+                        {getCategoryIcon(c.name)}
+                      </div>
+                    )}
+                    {c.discount_percent > 0 && (
+                      <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'var(--red)', color: 'white', fontSize: '0.7rem', fontWeight: 'bold', padding: '4px 8px', borderRadius: '20px' }}>
+                        {c.discount_percent}% OFF
+                      </div>
+                    )}
                   </div>
-                )}
-                <span style={{ color: 'var(--white)', fontFamily: 'var(--font-hero)', fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center' }}>{c.name}</span>
-                {c.discount_percent > 0 && (
-                  <span style={{ color: '#eab308', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '8px', background: 'rgba(234, 179, 8, 0.1)', padding: '4px 10px', borderRadius: '12px' }}>{c.discount_percent}% OFF</span>
-                )}
-              </Link>
-            ))}
+                  <div style={{ padding: '16px' }}>
+                    <div style={{ color: 'var(--white)', fontFamily: 'var(--font-hero)', fontWeight: 'bold', fontSize: '1rem', marginBottom: '4px' }}>{c.name}</div>
+                    <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>{prodCount} {prodCount === 1 ? 'product' : 'products'}</div>
+                    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--red)', fontSize: '0.82rem', fontWeight: 'bold' }}>
+                      <span>Shop Now</span>
+                      <ArrowRight size={12} />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
+
+      {/* ── Shop by Brands ── */}
+      {brands.length > 0 && (
+        <section style={{ padding: '80px 0' }}>
+          <div className="container">
+            <div className="section-header">
+              <div className="section-title-wrap">
+                <div className="section-eyebrow">Top Manufacturers</div>
+                <h2 className="section-title">Shop by Brand</h2>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
+              {brands.map(b => (
+                <Link
+                  key={b.id}
+                  to={`/shop?brand=${encodeURIComponent(b.name)}`}
+                  className="home-brand-card"
+                  style={{ textDecoration: 'none' }}
+                >
+                  <div style={{ width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                    {b.logo_url ? (
+                      <img src={`/api/uploads/${b.logo_url}`} alt={b.name}
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                    ) : (
+                      <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(228,0,15,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)', fontFamily: 'var(--font-hero)', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                        {b.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ color: 'var(--white)', fontFamily: 'var(--font-hero)', fontWeight: 'bold', fontSize: '0.9rem', textAlign: 'center' }}>{b.name}</div>
+                  {b.discount_percent > 0 && (
+                    <div style={{ color: '#eab308', fontSize: '0.75rem', fontWeight: 'bold', marginTop: '6px', textAlign: 'center' }}>{b.discount_percent}% OFF</div>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
 
 
