@@ -1,17 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, Droplets, Disc, SlidersHorizontal, FlaskConical, PackageOpen, Snowflake, ChevronDown, Truck, ShieldCheck, Lock, Settings, Sparkles } from 'lucide-react';
+import { Droplets, Disc, SlidersHorizontal, FlaskConical, PackageOpen, Snowflake, Wrench, Wind, Zap, Layers, ArrowRight, ChevronLeft, ChevronRight, ChevronDown, Truck, ShieldCheck, Lock } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 
-const getCategoryIcon = (name) => {
+const CAT_CONFIGS = [
+  { match: ['oil', 'fluid'],           icon: Droplets,       color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',   glow: 'rgba(245,158,11,0.3)',  label: 'Engine & Fluids' },
+  { match: ['brake', 'pad', 'shoe'],   icon: Disc,           color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   glow: 'rgba(239,68,68,0.3)',  label: 'Braking System' },
+  { match: ['filter'],                 icon: SlidersHorizontal, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)',  glow: 'rgba(139,92,246,0.3)', label: 'Filtration' },
+  { match: ['chemical', 'additive'],   icon: FlaskConical,   color: '#10b981', bg: 'rgba(16,185,129,0.12)',  glow: 'rgba(16,185,129,0.3)', label: 'Chemicals' },
+  { match: ['coolant'],                icon: Snowflake,      color: '#06b6d4', bg: 'rgba(6,182,212,0.12)',   glow: 'rgba(6,182,212,0.3)',  label: 'Cooling' },
+  { match: ['wiper', 'blade'],         icon: Wind,           color: '#3b82f6', bg: 'rgba(59,130,246,0.12)',  glow: 'rgba(59,130,246,0.3)', label: 'Wipers' },
+  { match: ['combo', 'deal', 'kit'],   icon: Layers,         color: '#ec4899', bg: 'rgba(236,72,153,0.12)',  glow: 'rgba(236,72,153,0.3)', label: 'Combo Deals' },
+  { match: ['spark', 'ignition'],      icon: Zap,            color: '#f97316', bg: 'rgba(249,115,22,0.12)',  glow: 'rgba(249,115,22,0.3)', label: 'Ignition' },
+  { match: ['tool', 'accessory'],      icon: Wrench,         color: '#6b7280', bg: 'rgba(107,114,128,0.12)', glow: 'rgba(107,114,128,0.3)',label: 'Tools' },
+];
+
+const getCatConfig = (name) => {
   const n = name.toLowerCase();
-  if (n.includes('oil') || n.includes('fluid')) return <Droplets size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
-  if (n.includes('brake') || n.includes('pad') || n.includes('shoe')) return <Disc size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
-  if (n.includes('filter')) return <SlidersHorizontal size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
-  if (n.includes('chemical') || n.includes('additive')) return <FlaskConical size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
-  if (n.includes('coolant')) return <Snowflake size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
-  return <PackageOpen size={32} strokeWidth={1.5} className="cat-strip-icon-svg" />;
+  const cfg = CAT_CONFIGS.find(c => c.match.some(m => n.includes(m)));
+  return cfg || { icon: PackageOpen, color: '#e4000f', bg: 'rgba(228,0,15,0.12)', glow: 'rgba(228,0,15,0.3)' };
 };
+
 const SLIDES = [
   {
     bg: '/slide_oil.png',
@@ -224,41 +233,40 @@ export default function Home({ products, categories = [], onAddToCart, onOpenAI 
               <h2 className="section-title">Shop by Category</h2>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
-            {categories.map(c => {
+          <div className="cat-cards-grid">
+            {categories.map((c, idx) => {
               const prodCount = products.filter(p => p.category === c.name).length;
+              const cfg = getCatConfig(c.name);
+              const Icon = cfg.icon;
               return (
                 <Link
                   to={`/shop?category=${encodeURIComponent(c.name)}`}
                   key={c.id}
-                  className="home-cat-card"
-                  style={{ textDecoration: 'none' }}
+                  className="cat-icon-card"
+                  style={{ '--cat-color': cfg.color, '--cat-bg': cfg.bg, '--cat-glow': cfg.glow }}
                 >
-                  <div style={{ position: 'relative', overflow: 'hidden' }}>
-                    {c.image_url ? (
-                      <div style={{ height: '140px', overflow: 'hidden', borderRadius: '12px 12px 0 0', background: 'rgba(255,255,255,0.03)' }}>
-                        <img src={`/api/uploads/${c.image_url}`} alt={c.name}
-                          style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '16px', boxSizing: 'border-box' }} />
-                      </div>
-                    ) : (
-                      <div style={{ height: '140px', borderRadius: '12px 12px 0 0', background: 'linear-gradient(135deg, rgba(228,0,15,0.08) 0%, rgba(255,255,255,0.03) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)' }}>
-                        {getCategoryIcon(c.name)}
-                      </div>
-                    )}
-                    {c.discount_percent > 0 && (
-                      <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'var(--red)', color: 'white', fontSize: '0.7rem', fontWeight: 'bold', padding: '4px 8px', borderRadius: '20px' }}>
-                        {c.discount_percent}% OFF
-                      </div>
-                    )}
+                  {/* Animated icon orb */}
+                  <div className="cat-icon-orb">
+                    <div className="cat-icon-ring" />
+                    <Icon size={28} strokeWidth={1.8} className="cat-icon-svg" />
                   </div>
-                  <div style={{ padding: '16px' }}>
-                    <div style={{ color: 'var(--white)', fontFamily: 'var(--font-hero)', fontWeight: 'bold', fontSize: '1rem', marginBottom: '4px' }}>{c.name}</div>
-                    <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>{prodCount} {prodCount === 1 ? 'product' : 'products'}</div>
-                    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--red)', fontSize: '0.82rem', fontWeight: 'bold' }}>
-                      <span>Shop Now</span>
-                      <ArrowRight size={12} />
-                    </div>
+
+                  {/* Text */}
+                  <div className="cat-icon-body">
+                    <div className="cat-icon-name">{c.name}</div>
+                    <div className="cat-icon-count">{prodCount} items</div>
                   </div>
+
+                  {/* Discount badge */}
+                  {c.discount_percent > 0 && (
+                    <div className="cat-icon-badge">{c.discount_percent}%</div>
+                  )}
+
+                  {/* Hover arrow */}
+                  <ArrowRight size={16} className="cat-icon-arrow" />
+
+                  {/* Background glow */}
+                  <div className="cat-icon-glow" />
                 </Link>
               );
             })}
