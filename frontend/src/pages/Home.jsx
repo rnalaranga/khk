@@ -292,20 +292,21 @@ export default function Home({ products, categories = [], onAddToCart, onOpenAI 
                   className="home-brand-card"
                   style={{ textDecoration: 'none' }}
                 >
-                  <div style={{ width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-                    {b.logo_url ? (
-                      <img src={`/api/uploads/${b.logo_url}`} alt={b.name}
-                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                    ) : (
-                      <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(228,0,15,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)', fontFamily: 'var(--font-hero)', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                        {b.name.charAt(0)}
-                      </div>
+                  {/* Logo */}
+                  {b.logo_url ? (
+                    <img src={`/api/uploads/${b.logo_url}`} alt={b.name} />
+                  ) : (
+                    <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(228,0,15,0.1)', border: '1px solid rgba(228,0,15,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)', fontFamily: 'var(--font-hero)', fontWeight: '900', fontSize: '1.4rem', fontStyle: 'italic', letterSpacing: '-0.02em' }}>
+                      {b.name.charAt(0)}
+                    </div>
+                  )}
+                  {/* Name */}
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ color: 'var(--white)', fontFamily: 'var(--font-hero)', fontWeight: '800', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1.1 }}>{b.name}</div>
+                    {b.discount_percent > 0 && (
+                      <div style={{ color: 'var(--red)', fontFamily: 'var(--font-hero)', fontSize: '0.7rem', fontWeight: '800', marginTop: '5px', letterSpacing: '0.04em' }}>{b.discount_percent}% OFF</div>
                     )}
                   </div>
-                  <div style={{ color: 'var(--white)', fontFamily: 'var(--font-hero)', fontWeight: 'bold', fontSize: '0.9rem', textAlign: 'center' }}>{b.name}</div>
-                  {b.discount_percent > 0 && (
-                    <div style={{ color: '#eab308', fontSize: '0.75rem', fontWeight: 'bold', marginTop: '6px', textAlign: 'center' }}>{b.discount_percent}% OFF</div>
-                  )}
                 </Link>
               ))}
             </div>

@@ -528,7 +528,7 @@ img { display: block; }
 .cat-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 .cat-icon-card {
   position: relative;
@@ -538,128 +538,166 @@ img { display: block; }
   padding: 18px 20px;
   background: var(--glass-bg);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 14px;
   text-decoration: none !important;
   overflow: hidden;
-  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: pointer;
 }
 .cat-icon-card:hover {
-  border-color: var(--cat-color, var(--red)) !important;
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.3), 0 0 0 1px var(--cat-color, var(--red));
+  border-color: var(--red) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  background: rgba(228,0,15,0.04);
 }
 .cat-icon-orb {
   position: relative;
   flex-shrink: 0;
-  width: 56px; height: 56px;
-  border-radius: 14px;
-  background: var(--cat-bg, rgba(228,0,15,0.12));
+  width: 50px; height: 50px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
-  transition: all 0.35s ease;
-  overflow: hidden;
+  transition: all 0.3s ease;
 }
 .cat-icon-card:hover .cat-icon-orb {
-  background: var(--cat-color, var(--red));
-  box-shadow: 0 0 20px var(--cat-glow, rgba(228,0,15,0.4));
+  background: var(--red);
+  border-color: var(--red);
+  box-shadow: 0 0 16px rgba(228,0,15,0.35);
   border-radius: 50%;
 }
 .cat-icon-ring {
-  position: absolute; inset: -4px;
+  position: absolute; inset: -5px;
   border-radius: 50%;
-  border: 2px dashed var(--cat-color, var(--red));
+  border: 1.5px dashed rgba(228,0,15,0.4);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 .cat-icon-card:hover .cat-icon-ring {
-  opacity: 0.5;
-  animation: catRingSpin 4s linear infinite;
+  opacity: 1;
+  animation: catRingSpin 5s linear infinite;
 }
 @keyframes catRingSpin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
 .cat-icon-svg {
-  color: var(--cat-color, var(--red));
-  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: var(--muted);
+  transition: all 0.3s ease;
   position: relative; z-index: 1;
 }
 .cat-icon-card:hover .cat-icon-svg {
   color: #fff;
-  transform: scale(1.2) rotate(-5deg);
+  transform: scale(1.15) rotate(-8deg);
 }
 .cat-icon-body { flex: 1; min-width: 0; }
 .cat-icon-name {
-  color: var(--white);
+  color: var(--text);
   font-family: var(--font-hero);
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: color 0.3s ease;
+  transition: color 0.25s ease;
 }
-.cat-icon-card:hover .cat-icon-name { color: var(--cat-color, var(--red)); }
-.cat-icon-count { color: var(--muted); font-size: 0.75rem; margin-top: 3px; }
+.cat-icon-card:hover .cat-icon-name { color: var(--white); }
+.cat-icon-count {
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin-top: 2px;
+  font-family: var(--font-ui);
+}
 .cat-icon-badge {
   flex-shrink: 0;
-  font-size: 0.7rem; font-weight: 800;
+  font-size: 0.68rem; font-weight: 800;
   color: #fff; background: var(--red);
-  padding: 3px 8px; border-radius: 20px;
+  padding: 3px 7px; border-radius: 20px;
+  font-family: var(--font-hero);
+  letter-spacing: 0.03em;
 }
 .cat-icon-arrow {
-  color: var(--muted); flex-shrink: 0;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  opacity: 0; transform: translateX(-6px);
+  color: var(--red); flex-shrink: 0;
+  transition: all 0.25s ease;
+  opacity: 0; transform: translateX(-8px);
 }
 .cat-icon-card:hover .cat-icon-arrow {
   opacity: 1; transform: translateX(0);
-  color: var(--cat-color, var(--red));
 }
-.cat-icon-glow {
-  position: absolute;
-  top: -40px; left: -40px;
-  width: 120px; height: 120px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--cat-glow, rgba(228,0,15,0.25)) 0%, transparent 70%);
-  opacity: 0; transition: opacity 0.4s ease; pointer-events: none;
-}
-.cat-icon-card:hover .cat-icon-glow { opacity: 1; }
+.cat-icon-glow { display: none; }
 
 @media (max-width: 640px) {
-  .cat-cards-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .cat-icon-card { padding: 14px; gap: 12px; }
-  .cat-icon-orb { width: 44px; height: 44px; border-radius: 10px; }
-  .cat-icon-name { font-size: 0.82rem; }
+  .cat-cards-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cat-icon-card { padding: 12px 14px; gap: 10px; }
+  .cat-icon-orb { width: 40px; height: 40px; border-radius: 10px; }
+  .cat-icon-name { font-size: 0.85rem; }
 }
 
-/* Brand Cards */
+/* ═══════════════════════════════
+   BRAND CARDS — Creative Redesign
+═══════════════════════════════ */
 .home-brand-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 160px;
-  padding: 28px 20px;
-  background: var(--glass-bg);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  transition: all 0.3s ease;
+  width: 150px;
+  min-height: 130px;
+  padding: 24px 16px 20px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 18px;
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: pointer;
+  overflow: hidden;
+  gap: 14px;
+}
+/* Top-left corner accent line */
+.home-brand-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 32px; height: 3px;
+  background: var(--red);
+  border-radius: 0 0 4px 0;
+  opacity: 0;
+  transition: opacity 0.3s ease, width 0.3s ease;
+}
+.home-brand-card:hover::before { opacity: 1; width: 60px; }
+/* Bottom shimmer sweep */
+.home-brand-card::after {
+  content: '';
+  position: absolute;
+  bottom: -60px; left: -60px;
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(228,0,15,0.12) 0%, transparent 70%);
+  transition: all 0.4s ease;
+  pointer-events: none;
+}
+.home-brand-card:hover::after {
+  bottom: -20px; left: -20px;
+  width: 140px; height: 140px;
 }
 .home-brand-card:hover {
-  border-color: var(--red) !important;
+  border-color: rgba(228,0,15,0.4) !important;
+  background: rgba(228,0,15,0.04);
   transform: translateY(-5px);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.25), 0 0 0 1px rgba(228,0,15,0.15);
-  background: rgba(228,0,15,0.05);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.35);
 }
 .home-brand-card img {
-  transition: transform 0.3s ease, filter 0.3s ease;
-  filter: brightness(0.85) saturate(0.8);
+  transition: transform 0.35s ease, filter 0.35s ease;
+  filter: grayscale(30%) brightness(0.9);
+  max-width: 90px;
+  max-height: 60px;
+  object-fit: contain;
 }
 .home-brand-card:hover img {
-  transform: scale(1.12);
-  filter: brightness(1) saturate(1);
+  transform: scale(1.1);
+  filter: grayscale(0%) brightness(1.05);
 }
 /* ═══════════════════════════════
    SECTIONS
