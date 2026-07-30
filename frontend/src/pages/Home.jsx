@@ -12,7 +12,8 @@ const CAT_CONFIGS = [
   { match: ['wiper', 'blade'],         icon: Wind,           color: '#3b82f6', bg: 'rgba(59,130,246,0.12)',  glow: 'rgba(59,130,246,0.3)', label: 'Wipers' },
   { match: ['combo', 'deal', 'kit'],   icon: Layers,         color: '#ec4899', bg: 'rgba(236,72,153,0.12)',  glow: 'rgba(236,72,153,0.3)', label: 'Combo Deals' },
   { match: ['spark', 'ignition'],      icon: Zap,            color: '#f97316', bg: 'rgba(249,115,22,0.12)',  glow: 'rgba(249,115,22,0.3)', label: 'Ignition' },
-  { match: ['tool', 'accessory'],      icon: Wrench,         color: '#6b7280', bg: 'rgba(107,114,128,0.12)', glow: 'rgba(107,114,128,0.3)',label: 'Tools' },
+  { match: ['tool'],                    icon: Wrench,         color: '#6b7280', bg: 'rgba(107,114,128,0.12)', glow: 'rgba(107,114,128,0.3)', label: 'Tools' },
+  { match: ['accessory', 'accessories', 'accessori'], icon: Layers, color: '#6b7280', bg: 'rgba(107,114,128,0.12)', glow: 'rgba(107,114,128,0.3)', label: 'Accessories' },
 ];
 
 const getCatConfig = (name) => {
@@ -284,7 +285,7 @@ export default function Home({ products, categories = [], onAddToCart, onOpenAI 
                 <h2 className="section-title">Shop by Brand</h2>
               </div>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center' }}>
               {brands.map(b => (
                 <Link
                   key={b.id}
