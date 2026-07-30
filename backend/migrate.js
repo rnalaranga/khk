@@ -1,7 +1,7 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-async function migrate() {
+async function runMigration() {
   try {
     const c = await mysql.createConnection({
       host: process.env.DB_HOST,
@@ -31,11 +31,11 @@ async function migrate() {
     } else {
       console.log('brand_id already exists.');
     }
-    console.log('Done!');
-    process.exit(0);
+    console.log('Migration Done!');
+    await c.end();
   } catch(e) {
-    console.error(e);
-    process.exit(1);
+    console.error('Migration error:', e);
   }
 }
-migrate();
+
+module.exports = { runMigration };

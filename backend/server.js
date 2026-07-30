@@ -32,8 +32,12 @@ app.get('/', (req, res) => {
   res.send('KHK Auto Parts API is running...');
 });
 
+const { runMigration } = require('./migrate');
+
 // Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+runMigration().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 });
