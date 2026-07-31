@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Package, PackageOpen, Server, AlertCircle, Edit, Trash2, Activity, Users, Car, Tag } from 'lucide-react';
+import { Plus, Package, PackageOpen, Server, AlertCircle, Edit, Trash2, Activity, Users, Car, Tag, Settings } from 'lucide-react';
 
 export default function AdminPanel({ user, addToast, showConfirm }) {
   const navigate = useNavigate();
@@ -11,6 +11,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const [customers, setCustomers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [seoSettings, setSeoSettings] = useState({ seo_title: '', seo_description: '', seo_keywords: '' });
   const [editingBrandId, setEditingBrandId] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [startDate, setStartDate] = useState('');
@@ -58,6 +59,30 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const fetchCustomers = () => fetch(`/api/auth/users`, { headers: { 'x-auth-token': token } }).then(res => res.json()).then(data => setCustomers(data)).catch(console.error);
   const fetchCategories = () => fetch(`/api/categories`).then(res => res.json()).then(data => { setCategories(data); if (data.length > 0) setForm(f => ({ ...f, category: f.category || data[0].name })); }).catch(console.error);
   const fetchBrands = () => fetch(`/api/brands`).then(res => res.json()).then(setBrands).catch(console.error);
+  const fetchSeoSettings = () => fetch(`/api/settings`).then(res => res.json()).then(data => setSeoSettings({ seo_title: data.seo_title || '', seo_description: data.seo_description || '', seo_keywords: data.seo_keywords || '' })).catch(console.error);
+
+  useEffect(() => {
+    if (tab === 'seo') fetchSeoSettings();
+  }, [tab]);
+
+  const handleSaveSeoSettings = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+        body: JSON.stringify({ settings: seoSettings })
+      });
+      if (res.ok) {
+        addToast('SEO Settings saved successfully', 'success');
+        fetchSeoSettings();
+      } else {
+        addToast('Error saving settings', 'error');
+      }
+    } catch (err) {
+      addToast('Network error', 'error');
+    }
+  };
 
   const updateForm = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updateVForm = (k, v) => setVForm(f => ({ ...f, [k]: v }));
@@ -361,6 +386,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
         <button onClick={() => setTab('categories')} className={tab === 'categories' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><PackageOpen size={18} /> Categories</button>
         <button onClick={() => setTab('vehicles')} className={tab === 'vehicles' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Car size={18} /> Vehicles</button>
         <button onClick={() => setTab('customers')} className={tab === 'customers' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Users size={18} /> Customers</button>
+        <button onClick={() => setTab('seo')} className={tab === 'seo' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Settings size={18} /> SEO Settings</button>
       </div>
 
       {/* Main Content */}
@@ -404,6 +430,28 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                 <h3 style={{ color: 'var(--white)', fontSize: '2rem', margin: '8px 0 0' }}>{outOfStockCount}</h3>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* SEO TAB */}
+        {tab === 'seo' && (
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>SEO & Meta Settings</h2>
+            <form onSubmit={handleSaveSeoSettings} style={{ background: 'rgba(255,255,255,0.02)', padding: 24, borderRadius: 12, border: '1px solid var(--border)' }}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 8, color: 'var(--text)' }}>Global SEO Title</label>
+                <input type="text" className="form-input" value={seoSettings.seo_title} onChange={e => setSeoSettings({ ...seoSettings, seo_title: e.target.value })} />
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 8, color: 'var(--text)' }}>Global Meta Description</label>
+                <textarea className="form-input" rows="3" value={seoSettings.seo_description} onChange={e => setSeoSettings({ ...seoSettings, seo_description: e.target.value })}></textarea>
+              </div>
+              <div style={{ marginBottom: 24 }}>
+                <label style={{ display: 'block', marginBottom: 8, color: 'var(--text)' }}>Global Meta Keywords (comma separated)</label>
+                <textarea className="form-input" rows="2" value={seoSettings.seo_keywords} onChange={e => setSeoSettings({ ...seoSettings, seo_keywords: e.target.value })}></textarea>
+              </div>
+              <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Save Settings</button>
+            </form>
           </div>
         )}
 

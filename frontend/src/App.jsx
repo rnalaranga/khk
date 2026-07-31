@@ -141,6 +141,35 @@ export default function App() {
     }
   }, []);
 
+  // Fetch SEO Settings
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.seo_title) {
+          document.title = data.seo_title;
+          const ogTitle = document.querySelector('meta[property="og:title"]');
+          if (ogTitle) ogTitle.setAttribute('content', data.seo_title);
+        }
+        if (data.seo_description) {
+          const metaDesc = document.querySelector('meta[name="description"]');
+          if (metaDesc) metaDesc.setAttribute('content', data.seo_description);
+          const ogDesc = document.querySelector('meta[property="og:description"]');
+          if (ogDesc) ogDesc.setAttribute('content', data.seo_description);
+        }
+        if (data.seo_keywords) {
+          let metaKeywords = document.querySelector('meta[name="keywords"]');
+          if (!metaKeywords) {
+            metaKeywords = document.createElement('meta');
+            metaKeywords.name = 'keywords';
+            document.head.appendChild(metaKeywords);
+          }
+          metaKeywords.setAttribute('content', data.seo_keywords);
+        }
+      })
+      .catch(err => console.error('Failed to load SEO settings:', err));
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);

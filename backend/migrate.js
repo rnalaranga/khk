@@ -31,6 +31,25 @@ async function runMigration() {
     } else {
       console.log('brand_id already exists.');
     }
+
+    console.log('Creating settings table...');
+    await c.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        key_name VARCHAR(100) PRIMARY KEY,
+        value TEXT
+      )
+    `);
+
+    console.log('Inserting default SEO settings if not exist...');
+    const defaultSettings = [
+      { k: 'seo_title', v: 'KHK Auto Parts | Car Spare Parts & Accessories | Sri Lanka' },
+      { k: 'seo_description', v: "KHK Auto Parts — Sri Lanka's trusted online store for genuine OEM and premium aftermarket car spare parts. Fast island-wide delivery." },
+      { k: 'seo_keywords', v: 'car spare parts, auto parts, engine oil, brake pads, filters, Sri Lanka, Colombo' }
+    ];
+    for (const s of defaultSettings) {
+      await c.query('INSERT IGNORE INTO settings (key_name, value) VALUES (?, ?)', [s.k, s.v]);
+    }
+
     console.log('Migration Done!');
     await c.end();
   } catch(e) {
