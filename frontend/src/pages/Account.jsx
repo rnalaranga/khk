@@ -19,6 +19,8 @@ export default function Account({ user, setUser, addToast }) {
     }
 
     fetchOrders();
+    if (user) {
+      setForm({
         phone: user.phone || '',
         address: user.address || '',
         city: user.city || ''
