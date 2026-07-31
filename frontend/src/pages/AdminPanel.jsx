@@ -11,6 +11,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const [customers, setCustomers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [vendorRequests, setVendorRequests] = useState([]);
   const [seoSettings, setSeoSettings] = useState({ seo_title: '', seo_description: '', seo_keywords: '' });
   const [editingBrandId, setEditingBrandId] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -60,9 +61,11 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
   const fetchCategories = () => fetch(`/api/categories`).then(res => res.json()).then(data => { setCategories(data); if (data.length > 0) setForm(f => ({ ...f, category: f.category || data[0].name })); }).catch(console.error);
   const fetchBrands = () => fetch(`/api/brands`).then(res => res.json()).then(setBrands).catch(console.error);
   const fetchSeoSettings = () => fetch(`/api/settings`).then(res => res.json()).then(data => setSeoSettings({ seo_title: data.seo_title || '', seo_description: data.seo_description || '', seo_keywords: data.seo_keywords || '' })).catch(console.error);
+  const fetchVendorRequests = () => fetch(`/api/auth/admin/vendor-requests`, { headers: { 'x-auth-token': token } }).then(res => res.json()).then(setVendorRequests).catch(console.error);
 
   useEffect(() => {
     if (tab === 'seo') fetchSeoSettings();
+    if (tab === 'vendor_requests') fetchVendorRequests();
   }, [tab]);
 
   const handleSaveSeoSettings = async (e) => {
@@ -387,6 +390,14 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
         <button onClick={() => setTab('vehicles')} className={tab === 'vehicles' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Car size={18} /> Vehicles</button>
         <button onClick={() => setTab('customers')} className={tab === 'customers' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Users size={18} /> Customers</button>
         <button onClick={() => setTab('vendors')} className={tab === 'vendors' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Users size={18} /> Vendors</button>
+        <button onClick={() => setTab('vendor_requests')} className={tab === 'vendor_requests' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}>
+          <Users size={18} /> Vendor Requests 
+          {vendorRequests.filter(r => r.status === 'pending').length > 0 && (
+            <span style={{ background: 'var(--red)', color: 'var(--white)', padding: '2px 6px', borderRadius: 10, fontSize: '0.7rem', marginLeft: 'auto' }}>
+              {vendorRequests.filter(r => r.status === 'pending').length}
+            </span>
+          )}
+        </button>
         <button onClick={() => setTab('seo')} className={tab === 'seo' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Settings size={18} /> SEO Settings</button>
       </div>
 
@@ -459,24 +470,134 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
         {/* VENDORS TAB */}
         {tab === 'vendors' && (
           <div>
-            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Registered Vendors</h2>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
-                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Email</th><th style={{ padding: 12 }}>Phone</th><th style={{ padding: 12 }}>City</th><th style={{ padding: 12 }}>Status</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
+            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Vendors</h2>
+            <div style={{ overflowX: 'auto', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 16 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}>
+                    <th style={{ padding: 16 }}>ID</th>
+                    <th style={{ padding: 16 }}>Name</th>
+                    <th style={{ padding: 16 }}>Email</th>
+                    <th style={{ padding: 16 }}>Status</th>
+                    <th style={{ padding: 16 }}>Actions</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {customers.filter(c => c.is_vendor).map(c => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: 12 }}>{c.name}</td>
-                      <td style={{ padding: 12 }}>{c.email}</td>
-                      <td style={{ padding: 12 }}>{c.phone || '-'}</td>
-                      <td style={{ padding: 12 }}>{c.city || '-'}</td>
-                      <td style={{ padding: 12 }}><span style={{ color: c.is_blocked ? 'var(--red)' : '#4ade80' }}>{c.is_blocked ? 'Blocked' : 'Active'}</span></td>
-                      <td style={{ padding: 12, display: 'flex', gap: 8 }}>
-                        <button onClick={() => handleBlockCustomer(c.id, c.is_blocked)} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--white)', padding: '4px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' }}>{c.is_blocked ? 'Unblock' : 'Block'}</button>
+                  {customers.filter(c => c.is_vendor).map(vendor => (
+                    <tr key={vendor.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: 16, color: 'var(--muted)' }}>#{vendor.id}</td>
+                      <td style={{ padding: 16 }}>{vendor.name}</td>
+                      <td style={{ padding: 16, color: 'var(--muted)' }}>{vendor.email}</td>
+                      <td style={{ padding: 16 }}>
+                        <span style={{ padding: '4px 8px', borderRadius: 4, background: vendor.is_blocked ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: vendor.is_blocked ? '#ef4444' : '#10b981', fontSize: '0.8rem' }}>
+                          {vendor.is_blocked ? 'Blocked' : 'Active'}
+                        </span>
+                      </td>
+                      <td style={{ padding: 16 }}>
+                        <button
+                          onClick={async () => {
+                            if (await showConfirm(vendor.is_blocked ? 'Unblock Vendor?' : 'Block Vendor?', `Are you sure you want to ${vendor.is_blocked ? 'unblock' : 'block'} ${vendor.name}?`)) {
+                              fetch(`/api/auth/users/${vendor.id}/block`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-auth-token': token }, body: JSON.stringify({ is_blocked: !vendor.is_blocked }) })
+                                .then(() => { addToast('Status updated', 'success'); fetchCustomers(); });
+                            }
+                          }}
+                          className="btn-outline"
+                          style={{ padding: '6px 12px', borderColor: vendor.is_blocked ? '#10b981' : '#ef4444', color: vendor.is_blocked ? '#10b981' : '#ef4444' }}
+                        >
+                          {vendor.is_blocked ? 'Unblock' : 'Block'}
+                        </button>
                       </td>
                     </tr>
                   ))}
-                  {customers.filter(c => c.is_vendor).length === 0 && <tr><td colSpan="6" style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>No vendors found.</td></tr>}
+                  {customers.filter(c => c.is_vendor).length === 0 && (
+                    <tr>
+                      <td colSpan="5" style={{ padding: 32, textAlign: 'center', color: 'var(--muted)' }}>No vendors found</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* VENDOR REQUESTS TAB */}
+        {tab === 'vendor_requests' && (
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Vendor Applications</h2>
+            <div style={{ overflowX: 'auto', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 16 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}>
+                    <th style={{ padding: 16 }}>Applicant</th>
+                    <th style={{ padding: 16 }}>Address</th>
+                    <th style={{ padding: 16 }}>Contacts</th>
+                    <th style={{ padding: 16 }}>Photo</th>
+                    <th style={{ padding: 16 }}>Status</th>
+                    <th style={{ padding: 16 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vendorRequests.map(req => (
+                    <tr key={req.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: 16 }}>
+                        <div style={{ fontWeight: 600 }}>{req.user_name}</div>
+                        <div style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>{req.user_email}</div>
+                      </td>
+                      <td style={{ padding: 16, maxWidth: 200 }}>
+                        <div style={{ fontSize: '0.9rem', marginBottom: 4 }}>{req.address}</div>
+                        <a href={req.google_location} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', fontSize: '0.8rem', textDecoration: 'underline' }}>View on Maps</a>
+                      </td>
+                      <td style={{ padding: 16, color: 'var(--muted)', fontSize: '0.9rem' }}>
+                        <div>1: {req.contact_number_1}</div>
+                        <div>2: {req.contact_number_2}</div>
+                      </td>
+                      <td style={{ padding: 16 }}>
+                        {req.seller_photo_url && (
+                          <a href={`/api/uploads/${req.seller_photo_url}`} target="_blank" rel="noreferrer">
+                            <img src={`/api/uploads/${req.seller_photo_url}`} alt="Seller" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }} />
+                          </a>
+                        )}
+                      </td>
+                      <td style={{ padding: 16 }}>
+                        <span style={{ padding: '4px 8px', borderRadius: 4, textTransform: 'capitalize', background: req.status === 'pending' ? 'rgba(234, 179, 8, 0.1)' : req.status === 'approved' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: req.status === 'pending' ? '#eab308' : req.status === 'approved' ? '#10b981' : '#ef4444', fontSize: '0.8rem' }}>
+                          {req.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: 16 }}>
+                        {req.status === 'pending' && (
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              onClick={async () => {
+                                if (await showConfirm('Approve Vendor?', `Are you sure you want to approve ${req.user_name} as a vendor?`)) {
+                                  fetch(`/api/auth/admin/vendor-requests/${req.id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-auth-token': token }, body: JSON.stringify({ status: 'approved' }) })
+                                    .then(() => { addToast('Vendor approved', 'success'); fetchVendorRequests(); fetchCustomers(); });
+                                }
+                              }}
+                              className="btn-primary" style={{ background: '#10b981', borderColor: '#10b981', padding: '6px 12px' }}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (await showConfirm('Reject Vendor?', `Are you sure you want to reject ${req.user_name}?`)) {
+                                  fetch(`/api/auth/admin/vendor-requests/${req.id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-auth-token': token }, body: JSON.stringify({ status: 'rejected' }) })
+                                    .then(() => { addToast('Vendor rejected', 'error'); fetchVendorRequests(); });
+                                }
+                              }}
+                              className="btn-outline" style={{ padding: '6px 12px', borderColor: '#ef4444', color: '#ef4444' }}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {vendorRequests.length === 0 && (
+                    <tr>
+                      <td colSpan="6" style={{ padding: 32, textAlign: 'center', color: 'var(--muted)' }}>No vendor requests found</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

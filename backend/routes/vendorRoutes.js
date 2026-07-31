@@ -34,8 +34,8 @@ router.get('/stats', auth, vendorAuth, async (req, res) => {
       WHERE p.vendor_id = ? AND o.status = 'delivered'
     `, [vendorId]);
 
-    const totalRevenue = salesResult[0].total_revenue || 0;
-    const totalOrders = salesResult[0].total_orders || 0;
+    const totalRevenue = parseFloat(salesResult[0].total_revenue) || 0;
+    const totalOrders = parseInt(salesResult[0].total_orders) || 0;
 
     res.json({
       totalProducts,

@@ -124,7 +124,7 @@ export default function VendorDashboard({ user, userLoading, addToast, showConfi
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
               <div style={{ background: 'rgba(255,255,255,0.05)', padding: 24, borderRadius: 12, border: '1px solid var(--border)' }}>
                 <p style={{ color: 'var(--muted)', margin: 0, textTransform: 'uppercase', fontSize: '0.8rem' }}>Total Sales Revenue</p>
-                <h3 style={{ color: '#4ade80', fontSize: '2rem', margin: '8px 0 0' }}>Rs. {Number(stats.totalRevenue).toLocaleString()}</h3>
+                <h3 style={{ color: '#4ade80', fontSize: '2rem', margin: '8px 0 0' }}>Rs. {Number(stats.totalRevenue || 0).toLocaleString()}</h3>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.05)', padding: 24, borderRadius: 12, border: '1px solid var(--border)' }}>
                 <p style={{ color: 'var(--muted)', margin: 0, textTransform: 'uppercase', fontSize: '0.8rem' }}>My Products Listed</p>

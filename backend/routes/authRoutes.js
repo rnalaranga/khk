@@ -7,6 +7,22 @@ const nodemailer = require('nodemailer');
 const db = require('../config/db');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
+const multer = require('multer');
+const path = require('path');
+const sharp = require('sharp');
+
+// Multer setup for memory storage
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Helper to process and save an image buffer
+async function processImage(buffer) {
+  const filename = `${Date.now()}_${Math.random().toString(36).substr(2, 6)}.webp`;
+  await sharp(buffer)
+    .webp({ quality: 80 })
+    .toFile(path.join(__dirname, '../uploads', filename));
+  return filename;
+}
 
 // @route   POST /api/auth/register
 // @desc    Register a user
@@ -335,3 +351,106 @@ router.put('/users/:id/role', adminAuth, async (req, res) => {
 });
 
 module.exports = router;
+
+// ==========================================
+// VENDOR REQUESTS
+// ==========================================
+
+// @route   POST /api/auth/vendor-request
+// @desc    Submit a vendor request
+// @access  Private
+router.post('/vendor-request', auth, upload.single('seller_photo'), async (req, res) => {
+  try {
+    const { address, google_location, contact_number_1, contact_number_2 } = req.body;
+    
+    // Check if user already has a pending or approved request
+    const [existing] = await db.query('SELECT * FROM vendor_requests WHERE user_id = ? AND status != "rejected"', [req.user.id]);
+    if (existing.length > 0) {
+      return res.status(400).json({ message: 'You already have a pending or approved request.' });
+    }
+
+    let seller_photo_url = '';
+    if (req.file) {
+      seller_photo_url = await processImage(req.file.buffer);
+    }
+
+    await db.query(
+      'INSERT INTO vendor_requests (user_id, address, google_location, contact_number_1, contact_number_2, seller_photo_url) VALUES (?, ?, ?, ?, ?, ?)',
+      [req.user.id, address, google_location, contact_number_1, contact_number_2, seller_photo_url]
+    );
+
+    res.status(201).json({ message: 'Vendor request submitted successfully' });
+  } catch (error) {
+    console.error('Error submitting vendor request:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/auth/vendor-request/status
+// @desc    Get the status of the current user's vendor request
+// @access  Private
+router.get('/vendor-request/status', auth, async (req, res) => {
+  try {
+    const [requests] = await db.query('SELECT status FROM vendor_requests WHERE user_id = ? ORDER BY created_at DESC LIMIT 1', [req.user.id]);
+    if (requests.length === 0) {
+      return res.json({ status: null });
+    }
+    res.json({ status: requests[0].status });
+  } catch (error) {
+    console.error('Error fetching vendor request status:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/auth/admin/vendor-requests
+// @desc    Get all vendor requests
+// @access  Private Admin
+router.get('/admin/vendor-requests', adminAuth, async (req, res) => {
+  try {
+    const [requests] = await db.query(`
+      SELECT vr.*, u.name as user_name, u.email as user_email
+      FROM vendor_requests vr
+      JOIN users u ON vr.user_id = u.id
+      ORDER BY vr.created_at DESC
+    `);
+    res.json(requests);
+  } catch (error) {
+    console.error('Error fetching vendor requests:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/auth/admin/vendor-requests/:id/status
+// @desc    Update vendor request status (Approve/Reject)
+// @access  Private Admin
+router.put('/admin/vendor-requests/:id/status', adminAuth, async (req, res) => {
+  const connection = await db.getConnection();
+  try {
+    const { status } = req.body;
+    if (status !== 'approved' && status !== 'rejected') {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    await connection.beginTransaction();
+
+    // Update request status
+    await connection.query('UPDATE vendor_requests SET status = ? WHERE id = ?', [status, req.params.id]);
+
+    // If approved, update user's is_vendor flag
+    if (status === 'approved') {
+      const [reqs] = await connection.query('SELECT user_id FROM vendor_requests WHERE id = ?', [req.params.id]);
+      if (reqs.length > 0) {
+        await connection.query('UPDATE users SET is_vendor = 1 WHERE id = ?', [reqs[0].user_id]);
+      }
+    }
+
+    await connection.commit();
+    res.json({ message: `Vendor request ${status}` });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error updating vendor request status:', error);
+    res.status(500).json({ message: 'Server error' });
+  } finally {
+    connection.release();
+  }
+});

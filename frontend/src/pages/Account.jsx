@@ -6,7 +6,10 @@ export default function Account({ user, setUser, addToast }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showProfileForm, setShowProfileForm] = useState(false);
-  const [form, setForm] = useState({ phone:'', address:'', city:'' });
+  const [showVendorForm, setShowVendorForm] = useState(false);
+  const [vendorReqStatus, setVendorReqStatus] = useState(null);
+  const [form, setForm] = useState({ phone: '', address: '', city: '' });
+  const [vendorForm, setVendorForm] = useState({ address: '', google_location: '', contact_number_1: '', contact_number_2: '', seller_photo: null });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,26 +18,7 @@ export default function Account({ user, setUser, addToast }) {
       return;
     }
 
-    const fetchOrders = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`/api/orders/my-orders`, {
-          headers: { 'x-auth-token': token }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setOrders(data);
-        }
-      } catch (err) {
-        console.error('Failed to load orders', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOrders();
-    if (user) {
-      setForm({
         phone: user.phone || '',
         address: user.address || '',
         city: user.city || ''
@@ -65,15 +49,35 @@ export default function Account({ user, setUser, addToast }) {
     }
   };
 
-  const handleBecomeVendor = async () => {
+  const handleBecomeVendor = async (e) => {
+    e.preventDefault();
+    if (!vendorForm.seller_photo) {
+      addToast('Please upload a seller photo', 'error');
+      return;
+    }
+    
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/auth/become-vendor', { method: 'POST', headers: { 'x-auth-token': token } });
+      const formData = new FormData();
+      formData.append('address', vendorForm.address);
+      formData.append('google_location', vendorForm.google_location);
+      formData.append('contact_number_1', vendorForm.contact_number_1);
+      formData.append('contact_number_2', vendorForm.contact_number_2);
+      formData.append('seller_photo', vendorForm.seller_photo);
+
+      const res = await fetch('/api/auth/vendor-request', {
+        method: 'POST',
+        headers: { 'x-auth-token': token },
+        body: formData
+      });
+      
       if (res.ok) {
-        setUser({ ...user, is_vendor: true });
-        addToast('You are now a vendor!', 'success');
+        setShowVendorForm(false);
+        setVendorReqStatus('pending');
+        addToast('Vendor request submitted successfully!', 'success');
       } else {
-        addToast('Error upgrading to vendor', 'error');
+        const data = await res.json();
+        addToast(data.message || 'Error submitting request', 'error');
       }
     } catch (err) {
       addToast('Network error', 'error');
@@ -94,8 +98,12 @@ export default function Account({ user, setUser, addToast }) {
             {user.role !== 'admin' && (
               user.is_vendor ? (
                 <button onClick={() => navigate('/vendor')} className="btn-primary" style={{ background: '#3b82f6', borderColor: '#3b82f6' }}>Vendor Dashboard</button>
+              ) : vendorReqStatus === 'pending' ? (
+                <button disabled className="btn-outline" style={{ opacity: 0.7, cursor: 'not-allowed', color: '#eab308', borderColor: '#eab308' }}>Vendor Request Pending</button>
+              ) : vendorReqStatus === 'rejected' ? (
+                <button onClick={() => setShowVendorForm(!showVendorForm)} className="btn-primary" style={{ background: '#ef4444', borderColor: '#ef4444' }}>Request Rejected - Try Again</button>
               ) : (
-                <button onClick={handleBecomeVendor} className="btn-primary" style={{ background: '#eab308', borderColor: '#eab308', color: '#000' }}>Become a Seller</button>
+                <button onClick={() => setShowVendorForm(!showVendorForm)} className="btn-primary" style={{ background: '#eab308', borderColor: '#eab308', color: '#000' }}>Become a Seller</button>
               )
             )}
             <button onClick={() => setShowProfileForm(!showProfileForm)} className="btn-outline">
@@ -103,6 +111,44 @@ export default function Account({ user, setUser, addToast }) {
             </button>
           </div>
         </div>
+
+        {showVendorForm && (
+          <form onSubmit={handleBecomeVendor} className="checkout-block" style={{ marginBottom: 32, background: 'rgba(234, 179, 8, 0.05)', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
+            <h2 style={{ fontFamily:'var(--font-hero)', fontSize:'1.2rem', marginBottom:16, color:'#eab308' }}>Vendor Application</h2>
+            <p style={{ color:'var(--muted)', fontSize:'0.9rem', marginBottom:20 }}>Submit your details to start selling on KHK Auto Parts. Your request will be reviewed by an administrator.</p>
+            
+            <div className="form-group">
+              <label className="form-label">Shop Address</label>
+              <textarea required className="form-input" value={vendorForm.address} onChange={e => setVendorForm({...vendorForm, address: e.target.value})} placeholder="Full physical address" rows="2" />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">Google Maps Location Link</label>
+              <input required type="url" className="form-input" value={vendorForm.google_location} onChange={e => setVendorForm({...vendorForm, google_location: e.target.value})} placeholder="https://maps.google.com/..." />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="form-group">
+                <label className="form-label">Contact Number 1</label>
+                <input required type="tel" className="form-input" value={vendorForm.contact_number_1} onChange={e => setVendorForm({...vendorForm, contact_number_1: e.target.value})} placeholder="077 123 4567" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Contact Number 2</label>
+                <input required type="tel" className="form-input" value={vendorForm.contact_number_2} onChange={e => setVendorForm({...vendorForm, contact_number_2: e.target.value})} placeholder="071 987 6543" />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Seller/Shop Photo (required)</label>
+              <input required type="file" accept="image/*" onChange={e => setVendorForm({...vendorForm, seller_photo: e.target.files[0]})} style={{ color: 'var(--white)', fontSize: '0.9rem', marginBottom: '8px' }} />
+              <p style={{ color:'var(--muted)', fontSize:'0.8rem', margin:0 }}>Upload a clear photo of your storefront or yourself.</p>
+            </div>
+
+            <button type="submit" className="btn-primary" style={{ background: '#eab308', borderColor: '#eab308', color: '#000', width: '100%', marginTop: 8 }}>
+              Submit Application
+            </button>
+          </form>
+        )}
 
         {showProfileForm && (
           <form onSubmit={handleUpdateProfile} className="checkout-block" style={{ marginBottom: 32 }}>
