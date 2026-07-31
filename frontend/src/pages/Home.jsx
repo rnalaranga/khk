@@ -85,7 +85,8 @@ export default function Home({ products, categories = [], onAddToCart, onOpenAI 
   const dynamicModels = [...new Set(vehicles.filter(v => v.make === make).map(v => v.model))].sort();
 
   const hotDeals = products.filter(p => p.discount_percent > 0);
-  const featured = products.slice(0, 8);
+  const reconditionedParts = products.filter(p => p.item_condition === 'reconditioned');
+  const featured = products.filter(p => p.item_condition !== 'reconditioned').slice(0, 8);
 
   const handleVehicleSearch = () => {
     if (make) setVehicleSelected({ make, model, year });
@@ -343,6 +344,81 @@ export default function Home({ products, categories = [], onAddToCart, onOpenAI 
           </div>
         </section>
       )}
+
+      {/* ── Reconditioned Parts ── */}
+      <section style={{ padding: '80px 0', background: 'var(--dark)', position: 'relative', overflow: 'hidden' }}>
+        {/* Racing diagonal accent */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--red)' }} />
+        <div style={{ position: 'absolute', top: 0, right: 0, width: '500px', height: '100%', background: 'radial-gradient(ellipse at top right, rgba(228,0,15,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+
+          {/* Header */}
+          <div className="section-header">
+            <div className="section-title-wrap">
+              <div className="section-eyebrow">Vendor Marketplace</div>
+              <h2 className="section-title">Used &amp; Reconditioned Parts</h2>
+            </div>
+            <Link to="/used-parts" className="btn-ghost">
+              Browse All <ArrowRight size={16}/>
+            </Link>
+          </div>
+
+          {/* Info strip */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 40 }}>
+            {/* Tested & Verified */}
+            <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: 12, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '14px 18px' }}>
+              <span style={{ fontSize: '1.4rem' }}>🔧</span>
+              <div>
+                <div style={{ fontFamily: 'var(--font-hero)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--white)' }}>Tested &amp; Verified</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: 2 }}>All parts inspected by vendors</div>
+              </div>
+            </div>
+            {/* Save Up to 70% */}
+            <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: 12, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '14px 18px' }}>
+              <span style={{ fontSize: '1.4rem' }}>💰</span>
+              <div>
+                <div style={{ fontFamily: 'var(--font-hero)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--white)' }}>Save Up to 70%</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: 2 }}>Budget-friendly alternatives</div>
+              </div>
+            </div>
+            {/* Eco-Friendly — animated */}
+            <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 12, padding: '14px 18px', position: 'relative', overflow: 'hidden' }}>
+              {/* Animated leaf particles */}
+              <span style={{ fontSize: '0.7rem', position: 'absolute', top: 6, right: 10, opacity: 0.4, animation: 'eco-float1 3s ease-in-out infinite' }}>🌿</span>
+              <span style={{ fontSize: '0.55rem', position: 'absolute', top: 18, right: 28, opacity: 0.3, animation: 'eco-float2 4s ease-in-out infinite' }}>🍃</span>
+              <span style={{ fontSize: '0.6rem', position: 'absolute', bottom: 8, right: 14, opacity: 0.35, animation: 'eco-float3 3.5s ease-in-out infinite' }}>🌱</span>
+              {/* Spinning recycle icon */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'eco-pulse 2s ease-in-out infinite' }}>
+                  <span style={{ fontSize: '1.2rem', display: 'inline-block', animation: 'eco-spin 6s linear infinite' }}>♻️</span>
+                </div>
+              </div>
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-hero)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#34d399' }}>Eco-Friendly</div>
+                <div style={{ fontSize: '0.78rem', color: 'rgba(52,211,153,0.7)', marginTop: 2 }}>Reduce automotive waste</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Products or empty state */}
+          {reconditionedParts.length > 0 ? (
+            <div className="product-grid">
+              {reconditionedParts.slice(0, 4).map(p => (
+                <ProductCard key={p.id} product={p} onAddToCart={onAddToCart} vehicleSelected={vehicleSelected} categories={categories} />
+              ))}
+            </div>
+          ) : (
+            <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 16, padding: '60px 40px', textAlign: 'center' }}>
+              <PackageOpen size={48} style={{ color: 'var(--muted)', marginBottom: 16 }} />
+              <h3 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.4rem', textTransform: 'uppercase', color: 'var(--white)', margin: '0 0 8px 0' }}>Stock Coming Soon</h3>
+              <p style={{ color: 'var(--muted)', margin: '0 0 24px 0' }}>Vendors are listing reconditioned parts daily. Check back soon!</p>
+              <Link to="/vendor" className="btn-outline">Become a Seller</Link>
+            </div>
+          )}
+
+        </div>
+      </section>
 
       {/* ── Featured Products ── */}
       <section className="section">

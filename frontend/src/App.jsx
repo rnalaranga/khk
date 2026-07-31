@@ -11,6 +11,8 @@ import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import Account from './pages/Account';
 import AdminPanel from './pages/AdminPanel';
+import VendorDashboard from './pages/VendorDashboard';
+import UsedParts from './pages/UsedParts';
 import MobileBottomNav from './components/MobileBottomNav';
 import AIChat from './components/AIChat';
 import { MessageCircle } from 'lucide-react';
@@ -96,6 +98,7 @@ export default function App() {
     return 'dark';
   });
   const [user, setUser]           = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
   const [bumpCart, setBumpCart]   = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const toastId = useRef(0);
@@ -133,11 +136,15 @@ export default function App() {
       })
       .then(userData => {
         setUser(userData);
+        setUserLoading(false);
       })
       .catch(() => {
         localStorage.removeItem('token');
         setUser(null);
+        setUserLoading(false);
       });
+    } else {
+      setUserLoading(false);
     }
   }, []);
 
@@ -289,6 +296,8 @@ export default function App() {
             <Route path="/reset-password" element={<ResetPassword addToast={addToast} />} />
             <Route path="/account" element={<Account user={user} setUser={setUser} addToast={addToast} />} />
             <Route path="/admin"   element={<AdminPanel user={user} addToast={addToast} showConfirm={showConfirm} />} />
+            <Route path="/vendor"  element={<VendorDashboard user={user} userLoading={userLoading} addToast={addToast} showConfirm={showConfirm} />} />
+            <Route path="/used-parts" element={<UsedParts products={products} categories={categories} onAddToCart={addToCart} />} />
           </Routes>
         </main>
 

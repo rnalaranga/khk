@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const db = require('../config/db');
 const adminAuth = require('../middleware/adminAuth');
-
+const auth = require('../middleware/auth');
 const sharp = require('sharp');
 
 // Configure Multer for Image Uploads using memory storage for processing
@@ -26,7 +26,7 @@ async function processImage(buffer) {
 router.get('/', async (req, res) => {
   try {
     const { category } = req.query;
-    let query = 'SELECT p.*, b.name as brand_name, b.logo_url as brand_logo, b.discount_percent as brand_discount FROM products p LEFT JOIN brands b ON p.brand_id = b.id';
+    let query = 'SELECT p.*, b.name as brand_name, b.logo_url as brand_logo, b.discount_percent as brand_discount, u.name as vendor_name FROM products p LEFT JOIN brands b ON p.brand_id = b.id LEFT JOIN users u ON p.vendor_id = u.id';
     const params = [];
 
     if (category) {
@@ -69,7 +69,7 @@ router.get('/', async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
-    const [product] = await db.query('SELECT p.*, b.name as brand_name, b.logo_url as brand_logo, b.discount_percent as brand_discount FROM products p LEFT JOIN brands b ON p.brand_id = b.id WHERE p.id = ?', [req.params.id]);
+    const [product] = await db.query('SELECT p.*, b.name as brand_name, b.logo_url as brand_logo, b.discount_percent as brand_discount, u.name as vendor_name FROM products p LEFT JOIN brands b ON p.brand_id = b.id LEFT JOIN users u ON p.vendor_id = u.id WHERE p.id = ?', [req.params.id]);
     
     if (product.length === 0) {
       return res.status(404).json({ message: 'Product not found' });
@@ -86,14 +86,19 @@ router.get('/:id', async (req, res) => {
 });
 
 // @route   POST /api/products
-// @desc    Create a product (Admin only)
-// @access  Private Admin
-router.post('/', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'image_2', maxCount: 1 }, { name: 'image_3', maxCount: 1 }]), async (req, res) => {
+// @desc    Create a product (Admin or Vendor)
+// @access  Private
+router.post('/', auth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'image_2', maxCount: 1 }, { name: 'image_3', maxCount: 1 }]), async (req, res) => {
+  // Check if admin or vendor
+  if (req.user.role !== 'admin' && !req.user.is_vendor) {
+    return res.status(403).json({ message: 'Access denied' });
+  }
+
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
 
-    const { name, category, price, discount_percent, stock, description, brand_id } = req.body;
+    const { name, category, price, discount_percent, stock, description, brand_id, item_condition } = req.body;
     let { vehicle_ids } = req.body;
     
     // Process up to 3 images
@@ -117,9 +122,12 @@ router.post('/', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { nam
       }
     }
 
+    const vendor_id = req.user.role === 'admin' ? null : req.user.id;
+    const finalCondition = item_condition || 'new';
+
     const [productRes] = await conn.query(
-      'INSERT INTO products (name, category, price, discount_percent, stock, image_url, image_url_2, image_url_3, description, brand_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, category || null, price, discount_percent || 0, stock || 0, imageUrl, imageUrl2, imageUrl3, description || null, brand_id || null]
+      'INSERT INTO products (name, category, price, discount_percent, stock, image_url, image_url_2, image_url_3, description, brand_id, vendor_id, item_condition) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, category || null, price, discount_percent || 0, stock || 0, imageUrl, imageUrl2, imageUrl3, description || null, brand_id || null, vendor_id, finalCondition]
     );
 
     const productId = productRes.insertId;
@@ -141,14 +149,24 @@ router.post('/', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { nam
 });
 
 // @route   PUT /api/products/:id
-// @desc    Update a product (Admin only)
-// @access  Private Admin
-router.put('/:id', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'image_2', maxCount: 1 }, { name: 'image_3', maxCount: 1 }]), async (req, res) => {
+// @desc    Update a product (Admin or Owner Vendor)
+// @access  Private
+router.put('/:id', auth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'image_2', maxCount: 1 }, { name: 'image_3', maxCount: 1 }]), async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
     const { id } = req.params;
-    const { name, category, price, discount_percent, stock, description, brand_id } = req.body;
+
+    // Check ownership
+    const [existing] = await conn.query('SELECT vendor_id FROM products WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    if (req.user.role !== 'admin' && existing[0].vendor_id !== req.user.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const { name, category, price, discount_percent, stock, description, brand_id, item_condition } = req.body;
     let { vehicle_ids, remove_image, remove_image_2, remove_image_3 } = req.body;
     
     // Process new images if uploaded
@@ -167,8 +185,10 @@ router.put('/:id', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { n
       }
     }
 
-    let query = 'UPDATE products SET name=?, category=?, price=?, discount_percent=?, stock=?, description=?, brand_id=?';
-    let params = [name, category || null, price, discount_percent || 0, stock || 0, description || null, brand_id || null];
+    const finalCondition = item_condition || 'new';
+
+    let query = 'UPDATE products SET name=?, category=?, price=?, discount_percent=?, stock=?, description=?, brand_id=?, item_condition=?';
+    let params = [name, category || null, price, discount_percent || 0, stock || 0, description || null, brand_id || null, finalCondition];
 
     // Handle image 1
     if (imageUrl) {
@@ -219,11 +239,18 @@ router.put('/:id', adminAuth, upload.fields([{ name: 'image', maxCount: 1 }, { n
 });
 
 // @route   DELETE /api/products/:id
-// @desc    Delete a product (Admin only)
-// @access  Private Admin
-router.delete('/:id', adminAuth, async (req, res) => {
+// @desc    Delete a product (Admin or Owner Vendor)
+// @access  Private
+router.delete('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
+    const [existing] = await db.query('SELECT vendor_id FROM products WHERE id = ?', [id]);
+    if (existing.length === 0) return res.status(404).json({ message: 'Product not found' });
+    
+    if (req.user.role !== 'admin' && existing[0].vendor_id !== req.user.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
     await db.query('DELETE FROM products WHERE id = ?', [id]);
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {

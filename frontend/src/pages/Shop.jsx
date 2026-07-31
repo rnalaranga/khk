@@ -36,16 +36,18 @@ export default function Shop({ products, categories = [], onAddToCart }) {
 
   const searchQ = searchParams.get('search') || '';
   const brandQ = searchParams.get('brand') || '';
+  const conditionQ = searchParams.get('condition') || '';
   
   const filtered = products.filter(p => {
     const matchCat = cat ? p.category === cat : true;
     const matchBrand = brandQ ? p.brand_name === brandQ : true;
+    const matchCondition = conditionQ ? p.item_condition === conditionQ : true;
     const matchSearch = searchQ 
       ? (p.name?.toLowerCase().includes(searchQ.toLowerCase()) || 
          p.description?.toLowerCase().includes(searchQ.toLowerCase()) ||
          p.brand_name?.toLowerCase().includes(searchQ.toLowerCase()))
       : true;
-    return matchCat && matchSearch && matchBrand;
+    return matchCat && matchSearch && matchBrand && matchCondition;
   });
   
   const ITEMS_PER_PAGE = 12;
@@ -69,10 +71,16 @@ export default function Shop({ products, categories = [], onAddToCart }) {
               </div>
               <div className="sidebar-categories-wrap">
                 <button
-                  className={`sidebar-cat-btn${!cat ? ' active' : ''}`}
+                  className={`sidebar-cat-btn${!cat && !conditionQ ? ' active' : ''}`}
                   onClick={() => { setSearchParams({}); setIsCatOpen(false); }}
                 >
                   All Products <span style={{ color:'var(--muted)', fontSize:'0.8rem', marginLeft: 8 }}>{products.length}</span>
+                </button>
+                <button
+                  className={`sidebar-cat-btn${conditionQ === 'reconditioned' ? ' active' : ''}`}
+                  onClick={() => { setSearchParams({ condition: 'reconditioned' }); setIsCatOpen(false); }}
+                >
+                  <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>Used / Reconditioned</span> <span style={{ color:'var(--muted)', fontSize:'0.8rem', marginLeft: 8 }}>{products.filter(p => p.item_condition === 'reconditioned').length}</span>
                 </button>
                 {categories.map(c => {
                   const count = products.filter(p => p.category === c.name).length;
@@ -96,7 +104,9 @@ export default function Shop({ products, categories = [], onAddToCart }) {
             <div className="section-header" style={{ marginBottom:24 }}>
               <div>
                 <div className="section-eyebrow">Catalogue</div>
-                <h1 className="section-title">{brandQ ? `${brandQ} Products` : (cat || 'All Products')}</h1>
+                <h1 className="section-title">
+                  {conditionQ === 'reconditioned' ? 'Used & Reconditioned Parts' : (brandQ ? `${brandQ} Products` : (cat || 'All Products'))}
+                </h1>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <span style={{ color:'var(--muted)', fontSize:'0.9rem', fontWeight:600 }}>

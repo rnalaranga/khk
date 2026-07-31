@@ -386,6 +386,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
         <button onClick={() => setTab('categories')} className={tab === 'categories' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><PackageOpen size={18} /> Categories</button>
         <button onClick={() => setTab('vehicles')} className={tab === 'vehicles' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Car size={18} /> Vehicles</button>
         <button onClick={() => setTab('customers')} className={tab === 'customers' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Users size={18} /> Customers</button>
+        <button onClick={() => setTab('vendors')} className={tab === 'vendors' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Users size={18} /> Vendors</button>
         <button onClick={() => setTab('seo')} className={tab === 'seo' ? 'btn-primary' : 'btn-outline'} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}><Settings size={18} /> SEO Settings</button>
       </div>
 
@@ -452,6 +453,33 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
               </div>
               <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Save Settings</button>
             </form>
+          </div>
+        )}
+
+        {/* VENDORS TAB */}
+        {tab === 'vendors' && (
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-hero)', fontSize: '1.5rem', marginBottom: 24, color: 'var(--white)' }}>Registered Vendors</h2>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
+                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Email</th><th style={{ padding: 12 }}>Phone</th><th style={{ padding: 12 }}>City</th><th style={{ padding: 12 }}>Status</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
+                <tbody>
+                  {customers.filter(c => c.is_vendor).map(c => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: 12 }}>{c.name}</td>
+                      <td style={{ padding: 12 }}>{c.email}</td>
+                      <td style={{ padding: 12 }}>{c.phone || '-'}</td>
+                      <td style={{ padding: 12 }}>{c.city || '-'}</td>
+                      <td style={{ padding: 12 }}><span style={{ color: c.is_blocked ? 'var(--red)' : '#4ade80' }}>{c.is_blocked ? 'Blocked' : 'Active'}</span></td>
+                      <td style={{ padding: 12, display: 'flex', gap: 8 }}>
+                        <button onClick={() => handleBlockCustomer(c.id, c.is_blocked)} style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--white)', padding: '4px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.8rem' }}>{c.is_blocked ? 'Unblock' : 'Block'}</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {customers.filter(c => c.is_vendor).length === 0 && <tr><td colSpan="6" style={{ padding: 24, textAlign: 'center', color: 'var(--muted)' }}>No vendors found.</td></tr>}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -633,7 +661,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
 
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--white)' }}>
-                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>ID</th><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Price</th><th style={{ padding: 12 }}>Discount</th><th style={{ padding: 12 }}>Stock</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
+                <thead><tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--muted)' }}><th style={{ padding: 12 }}>ID</th><th style={{ padding: 12 }}>Name</th><th style={{ padding: 12 }}>Vendor</th><th style={{ padding: 12 }}>Price</th><th style={{ padding: 12 }}>Discount</th><th style={{ padding: 12 }}>Stock</th><th style={{ padding: 12 }}>Actions</th></tr></thead>
                 <tbody>
                   {(() => {
                     const filtered = products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || String(p.id) === productSearch);
@@ -643,7 +671,7 @@ export default function AdminPanel({ user, addToast, showConfirm }) {
                       <>
                         {current.map(p => (
                           <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                            <td style={{ padding: 12 }}>#{p.id}</td><td style={{ padding: 12 }}>{p.name}</td><td style={{ padding: 12 }}>Rs. {p.price}</td><td style={{ padding: 12 }}>{p.discount_percent ? `${p.discount_percent}%` : '-'}</td>
+                            <td style={{ padding: 12 }}>#{p.id}</td><td style={{ padding: 12 }}>{p.name} {p.item_condition === 'reconditioned' && <span style={{fontSize:'0.7rem', color:'#3b82f6', marginLeft:4}}>(Used)</span>}</td><td style={{ padding: 12, color: '#eab308' }}>{p.vendor_name || 'KHK'}</td><td style={{ padding: 12 }}>Rs. {p.price}</td><td style={{ padding: 12 }}>{p.discount_percent ? `${p.discount_percent}%` : '-'}</td>
                             <td style={{ padding: 12 }}><span style={{ color: p.stock === 0 ? 'var(--red)' : 'inherit' }}>{p.stock === 0 ? 'Out of Stock' : p.stock}</span></td>
                             <td style={{ padding: 12, display: 'flex', gap: 8 }}>
                               <button onClick={() => handleEditProduct(p)} style={{ background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer' }}><Edit size={18} /></button>

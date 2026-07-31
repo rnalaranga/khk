@@ -735,7 +735,33 @@ img { display: block; }
   100% { opacity: 1; transform: translateY(0); }
 }@keyframes hd-spin { 100% { transform: rotate(360deg); } }
 @keyframes hd-spin-rev { 100% { transform: rotate(-360deg); } }
+
+/* ── Eco-Friendly Card Animations ── */
+@keyframes eco-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes eco-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  50%       { box-shadow: 0 0 12px 4px rgba(16,185,129,0.3); }
+}
+@keyframes eco-float1 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.4; }
+  33%       { transform: translate(-4px, -5px) rotate(15deg); opacity: 0.6; }
+  66%       { transform: translate(3px, -3px) rotate(-10deg); opacity: 0.3; }
+}
+@keyframes eco-float2 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.3; }
+  40%       { transform: translate(-6px, -6px) rotate(-20deg); opacity: 0.5; }
+  70%       { transform: translate(2px, -2px) rotate(10deg); opacity: 0.2; }
+}
+@keyframes eco-float3 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.35; }
+  50%       { transform: translate(-3px, -7px) rotate(25deg); opacity: 0.55; }
+}
+
 .hot-deals-banner {
+
   background: linear-gradient(135deg, #e4000f 0%, #9c1c15 100%);
   padding: 28px 0;
   margin-bottom: 40px;

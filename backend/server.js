@@ -11,6 +11,7 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const brandRoutes = require('./routes/brandRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const vendorRoutes = require('./routes/vendorRoutes');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/vendor', vendorRoutes);
 
 // Default route
 app.get('/', (req, res) => {

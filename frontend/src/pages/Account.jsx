@@ -65,6 +65,21 @@ export default function Account({ user, setUser, addToast }) {
     }
   };
 
+  const handleBecomeVendor = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/auth/become-vendor', { method: 'POST', headers: { 'x-auth-token': token } });
+      if (res.ok) {
+        setUser({ ...user, is_vendor: true });
+        addToast('You are now a vendor!', 'success');
+      } else {
+        addToast('Error upgrading to vendor', 'error');
+      }
+    } catch (err) {
+      addToast('Network error', 'error');
+    }
+  };
+
   if (!user || loading) return <div className="section container" style={{ minHeight:'60vh', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--muted)' }}>Loading...</div>;
 
   return (
@@ -75,9 +90,18 @@ export default function Account({ user, setUser, addToast }) {
             <div className="section-eyebrow">My Account</div>
             <h1 className="section-title">Order History</h1>
           </div>
-          <button onClick={() => setShowProfileForm(!showProfileForm)} className="btn-outline">
-            {showProfileForm ? 'Cancel' : 'Update Shipping Details'}
-          </button>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            {user.role !== 'admin' && (
+              user.is_vendor ? (
+                <button onClick={() => navigate('/vendor')} className="btn-primary" style={{ background: '#3b82f6', borderColor: '#3b82f6' }}>Vendor Dashboard</button>
+              ) : (
+                <button onClick={handleBecomeVendor} className="btn-primary" style={{ background: '#eab308', borderColor: '#eab308', color: '#000' }}>Become a Seller</button>
+              )
+            )}
+            <button onClick={() => setShowProfileForm(!showProfileForm)} className="btn-outline">
+              {showProfileForm ? 'Cancel' : 'Update Shipping Details'}
+            </button>
+          </div>
         </div>
 
         {showProfileForm && (

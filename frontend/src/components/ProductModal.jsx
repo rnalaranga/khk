@@ -111,7 +111,11 @@ export default function ProductModal({ isOpen, onClose, product, onAddToCart, ve
                   <span className="badge-sale">-{bestDiscount}% OFF</span>
                 )
               )}
+              {product.item_condition === 'reconditioned' && <span className="badge-sale" style={{ background: '#3b82f6', marginLeft: 8 }}>RECONDITIONED</span>}
               <span style={{ color: '#4ade80', fontSize: '0.9rem', display: 'block', marginTop: 4 }}>{product.stock} items available</span>
+              {product.vendor_name && (
+                <span style={{ color: '#eab308', fontSize: '0.9rem', display: 'block', marginTop: 4 }}>Sold by: {product.vendor_name}</span>
+              )}
             </div>
 
             <div style={{ background: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 8, border: '1px solid var(--border)' }}>

@@ -109,11 +109,24 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone, address: user.address, city: user.city, is_vendor: user.is_vendor }
     });
 
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/auth/become-vendor
+// @desc    Upgrade user to vendor
+// @access  Private
+router.post('/become-vendor', auth, async (req, res) => {
+  try {
+    await db.query('UPDATE users SET is_vendor = true WHERE id = ?', [req.user.id]);
+    res.json({ message: 'Successfully upgraded to Vendor' });
+  } catch (error) {
+    console.error('Become vendor error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -124,7 +137,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const [users] = await db.query(
-      'SELECT id, name, email, role, phone, address, city FROM users WHERE id = ?',
+      'SELECT id, name, email, role, phone, address, city, is_vendor FROM users WHERE id = ?',
       [req.user.id]
     );
     if (users.length === 0) return res.status(404).json({ message: 'User not found' });

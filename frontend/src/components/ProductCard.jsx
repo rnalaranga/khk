@@ -61,6 +61,7 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected, cat
           )
         )}
         {isCompatible && <span className="badge-compat">✓ Fits Your Car</span>}
+        {product.item_condition === 'reconditioned' && <span className="badge-sale" style={{ background: '#3b82f6', marginLeft: 4 }}>RECONDITIONED</span>}
       </div>
 
       {/* Image */}
@@ -84,6 +85,9 @@ export default function ProductCard({ product, onAddToCart, vehicleSelected, cat
           <p className="pcard-compat" title={vehicleDisplay}>
             🚗 {vehicleDisplay}
           </p>
+        )}
+        {product.vendor_name && (
+          <p style={{ fontSize: '0.75rem', color: '#eab308', margin: '4px 0 0 0' }}>Sold by: {product.vendor_name}</p>
         )}
 
         <div className="pcard-footer">

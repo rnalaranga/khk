@@ -50,6 +50,23 @@ async function runMigration() {
       await c.query('INSERT IGNORE INTO settings (key_name, value) VALUES (?, ?)', [s.k, s.v]);
     }
 
+    console.log('Checking if is_vendor exists on users...');
+    const [uCols] = await c.query("SHOW COLUMNS FROM users LIKE 'is_vendor'");
+    if (uCols.length === 0) {
+      console.log('Adding is_vendor to users...');
+      await c.query('ALTER TABLE users ADD COLUMN is_vendor BOOLEAN DEFAULT false');
+    }
+
+    console.log('Checking if vendor_id exists on products...');
+    const [pCols] = await c.query("SHOW COLUMNS FROM products LIKE 'vendor_id'");
+    if (pCols.length === 0) {
+      console.log('Adding vendor_id and item_condition to products...');
+      await c.query('ALTER TABLE products ADD COLUMN vendor_id INT NULL');
+      await c.query('ALTER TABLE products ADD COLUMN item_condition VARCHAR(50) DEFAULT "new"');
+      console.log('Adding foreign key constraint for vendor_id...');
+      await c.query('ALTER TABLE products ADD CONSTRAINT fk_vendor FOREIGN KEY (vendor_id) REFERENCES users(id) ON DELETE CASCADE');
+    }
+
     console.log('Migration Done!');
     await c.end();
   } catch(e) {
