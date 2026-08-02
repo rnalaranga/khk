@@ -90,7 +90,8 @@ router.get('/:id', async (req, res) => {
 // @access  Private
 router.post('/', auth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'image_2', maxCount: 1 }, { name: 'image_3', maxCount: 1 }]), async (req, res) => {
   // Check if admin or vendor
-  if (req.user.role !== 'admin' && !req.user.is_vendor) {
+  const [users] = await db.query('SELECT role, is_vendor FROM users WHERE id = ?', [req.user.id]);
+  if (users.length === 0 || (users[0].role !== 'admin' && !users[0].is_vendor)) {
     return res.status(403).json({ message: 'Access denied' });
   }
 
@@ -162,7 +163,11 @@ router.put('/:id', auth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 
     if (existing.length === 0) {
       return res.status(404).json({ message: 'Product not found' });
     }
-    if (req.user.role !== 'admin' && existing[0].vendor_id !== req.user.id) {
+    
+    const [users] = await conn.query('SELECT role FROM users WHERE id = ?', [req.user.id]);
+    const userRole = users.length > 0 ? users[0].role : 'customer';
+
+    if (userRole !== 'admin' && existing[0].vendor_id !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -247,7 +252,10 @@ router.delete('/:id', auth, async (req, res) => {
     const [existing] = await db.query('SELECT vendor_id FROM products WHERE id = ?', [id]);
     if (existing.length === 0) return res.status(404).json({ message: 'Product not found' });
     
-    if (req.user.role !== 'admin' && existing[0].vendor_id !== req.user.id) {
+    const [users] = await db.query('SELECT role FROM users WHERE id = ?', [req.user.id]);
+    const userRole = users.length > 0 ? users[0].role : 'customer';
+
+    if (userRole !== 'admin' && existing[0].vendor_id !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
 

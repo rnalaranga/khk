@@ -5,10 +5,15 @@ const auth = require('../middleware/auth');
 
 // Middleware to check if user is a vendor
 const vendorAuth = async (req, res, next) => {
-  if (req.user.role === 'admin' || req.user.is_vendor) {
-    next();
-  } else {
-    res.status(403).json({ message: 'Vendor access required' });
+  try {
+    const [users] = await db.query('SELECT role, is_vendor FROM users WHERE id = ?', [req.user.id]);
+    if (users.length > 0 && (users[0].role === 'admin' || users[0].is_vendor)) {
+      next();
+    } else {
+      res.status(403).json({ message: 'Vendor access required' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
