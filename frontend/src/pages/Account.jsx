@@ -25,8 +25,39 @@ export default function Account({ user, setUser, addToast }) {
         address: user.address || '',
         city: user.city || ''
       });
+      if (!user.is_vendor && user.role !== 'admin') {
+        fetchVendorRequestStatus();
+      }
     }
   }, [user, navigate]);
+
+  const fetchOrders = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/orders/my-orders', { headers: { 'x-auth-token': token } });
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchVendorRequestStatus = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/auth/vendor-request/status', { headers: { 'x-auth-token': token } });
+      if (res.ok) {
+        const data = await res.json();
+        setVendorReqStatus(data.status);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
